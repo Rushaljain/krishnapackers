@@ -59,7 +59,7 @@ export default function LeadsPage() {
         `"${(lead.phone || '').replace(/"/g, '""')}"`,
         `"${(lead.target_product_sku || '').replace(/"/g, '""')}"`,
         `"${(lead.estimated_qty || '').replace(/"/g, '""')}"`,
-        `"${(lead.additional_message || '').replace(/"/g, '""')}"`,
+        `"${(lead.message || '').replace(/"/g, '""')}"`,
         `"${(lead.status || 'New').replace(/"/g, '""')}"`
       ].join(','))
     ].join('\n');
@@ -153,17 +153,19 @@ export default function LeadsPage() {
                     <div className="text-sm text-gray-500">{lead.phone}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      <span className="font-medium">SKU:</span> {lead.target_product_sku || 'General Inquiry'}
-                    </div>
-                    {lead.estimated_qty && (
-                      <div className="text-sm text-gray-500 mt-1">
-                        <span className="font-medium">Qty:</span> {lead.estimated_qty}
+                    {lead.target_product_sku && (
+                      <div className="text-sm font-medium text-amber-700 mb-1">
+                        SKU: {lead.target_product_sku}
                       </div>
                     )}
-                    {lead.additional_message && (
-                      <div className="text-sm text-gray-500 mt-2 line-clamp-2 max-w-xs" title={lead.additional_message}>
-                        "{lead.additional_message}"
+                    {lead.estimated_qty && (
+                      <div className="text-sm text-gray-900 mb-1">
+                        Qty: {lead.estimated_qty}
+                      </div>
+                    )}
+                    {lead.message && (
+                      <div className="text-sm text-gray-500 mt-2 line-clamp-2 max-w-xs" title={lead.message}>
+                        "{lead.message}"
                       </div>
                     )}
                   </td>

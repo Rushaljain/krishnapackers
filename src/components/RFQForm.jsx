@@ -41,7 +41,7 @@ export default function RFQForm({ productSku, productName }) {
       setIsSuccess(true);
     } catch (err) {
       console.error("Error submitting RFQ:", err);
-      setError("Failed to submit request. Please try again later.");
+      setError(`Failed to submit: ${err.message || err.details || "Unknown error"}`);
     } finally {
       setIsSubmitting(false);
     }

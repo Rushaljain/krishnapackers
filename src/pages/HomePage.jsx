@@ -77,7 +77,7 @@ export default function HomePage({ onOpenQuote }) {
               ].map((prod, idx) => {
                 const hashId = prod.name.toLowerCase().replace(/[\s&/]+/g, '-');
                 return (
-                <Link key={idx} to={`/products#${hashId}`} className="w-[75vw] sm:w-[280px] md:w-[320px] lg:w-[350px] h-full snap-start flex-shrink-0 group cursor-pointer border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 bg-gray-50 flex flex-col">
+                <Link key={idx} to={`/our-products#${hashId}`} className="w-[75vw] sm:w-[280px] md:w-[320px] lg:w-[350px] h-full snap-start flex-shrink-0 group cursor-pointer border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 bg-gray-50 flex flex-col">
                   <div className="aspect-[5/4] bg-gray-200 flex items-center justify-center relative flex-shrink-0">
                      <Package className="h-10 w-10 md:h-16 md:w-16 text-gray-400 group-hover:scale-110 transition duration-300" />
                      <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-white p-1 md:p-2 rounded-full shadow-md"><ChevronRight className="text-amber-700 w-4 h-4 md:w-5 md:h-5" /></div>
@@ -97,7 +97,7 @@ export default function HomePage({ onOpenQuote }) {
                 </div>
                 <h3 className="text-xl md:text-2xl font-bold mb-2 text-gray-900">We Also Customize</h3>
                 <p className="text-gray-600 text-sm mb-6">Need specific dimensions or logo branding? We manufacture to your exact specs.</p>
-                <Link to="/products" className="bg-amber-700 text-white px-6 py-2 rounded-md font-semibold hover:bg-amber-800 transition text-sm mt-auto">
+                <Link to="/our-products" className="bg-amber-700 text-white px-6 py-2 rounded-md font-semibold hover:bg-amber-800 transition text-sm mt-auto">
                   Full Catalog
                 </Link>
               </div>

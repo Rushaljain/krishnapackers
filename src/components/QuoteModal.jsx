@@ -8,7 +8,7 @@ export default function QuoteModal({ isOpen, onClose }) {
     company_name: '',
     email: '',
     phone: '',
-    additional_message: ''
+    message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -44,14 +44,14 @@ export default function QuoteModal({ isOpen, onClose }) {
           company_name: '',
           email: '',
           phone: '',
-          additional_message: ''
+          message: ''
         });
         onClose();
       }, 3000);
       
     } catch (err) {
       console.error("Error submitting quote request:", err);
-      setError("Failed to submit request. Please try again later.");
+      setError(`Failed to submit: ${err.message || err.details || "Unknown error"}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -144,8 +144,8 @@ export default function QuoteModal({ isOpen, onClose }) {
                 <label className="text-sm font-semibold text-gray-700">Requirements / Message</label>
                 <textarea 
                   rows="4" 
-                  name="additional_message"
-                  value={formData.additional_message}
+                  name="message"
+                  value={formData.message}
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-700 focus:border-amber-700 outline-none transition resize-none" 
                   placeholder="Tell us about the products you are interested in and your application..."

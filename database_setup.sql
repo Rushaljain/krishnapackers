@@ -43,3 +43,12 @@ ON public.rfq_leads
 FOR INSERT
 TO public
 WITH CHECK (true);
+
+-- Add status column to rfq_leads if not exists
+ALTER TABLE public.rfq_leads ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'New';
+
+-- Allow authenticated users to view all leads
+CREATE POLICY "Allow auth read access to rfq_leads" ON public.rfq_leads FOR SELECT TO authenticated USING (true);
+
+-- Allow authenticated users to update leads
+CREATE POLICY "Allow auth update to rfq_leads" ON public.rfq_leads FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
