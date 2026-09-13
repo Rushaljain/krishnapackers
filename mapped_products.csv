@@ -1,0 +1,24 @@
+sku_code,product_category,product_name,bag_type,capacity,construction,material,application,status
+KP-KPS-001,Kraft Paper Bags,2 Ply Kraft Paper Sack,Open Mouth,5 Kg,2 Ply,Kraft Paper,"Flour, Food, Chemicals",Active
+KP-KPS-002,Kraft Paper Bags,2 Ply Kraft Paper Sack,Open Mouth,10 Kg,2 Ply,Kraft Paper,Food & Chemicals,Active
+KP-KPS-003,Kraft Paper Bags,2 Ply Kraft Paper Sack,Open Mouth,25 Kg,2 Ply,Kraft Paper,Agro Products,Active
+KP-KPS-004,Kraft Paper Bags,3 Ply Kraft Paper Sack,Open Mouth,25 Kg,3 Ply,Kraft Paper,Chemicals,Active
+KP-KPS-005,Kraft Paper Bags,3 Ply Kraft Paper Sack,Open Mouth,50 Kg,3 Ply,Kraft Paper,Minerals,Active
+KP-KPS-006,Kraft Paper Bags,4 Ply Kraft Paper Sack,Open Mouth,50 Kg,4 Ply,Kraft Paper,Cement & Chemicals,Active
+KP-MWS-001,Multiwall & Valve Bags,2 Ply Multiwall Sack,Valve,25 Kg,2 Ply,Kraft Paper,Food Ingredients,Active
+KP-MWS-002,Multiwall & Valve Bags,3 Ply Multiwall Sack,Valve,25 Kg,3 Ply,Kraft Paper,Chemicals,Active
+KP-MWS-003,Multiwall & Valve Bags,3 Ply Multiwall Sack,Open Mouth,50 Kg,3 Ply,Kraft Paper,Minerals,Active
+KP-MWS-004,Multiwall & Valve Bags,4 Ply Multiwall Sack,Valve,50 Kg,4 Ply,Kraft Paper,Cement,Active
+KP-MWS-005,Multiwall & Valve Bags,4 Ply Multiwall Sack,Open Mouth,50 Kg,4 Ply,Kraft Paper,Fertilizer,Active
+KP-MWS-006,Multiwall & Valve Bags,PE Liner Multiwall Sack,Valve,25 Kg,3 Ply + PE,Kraft + PE,Food Grade,Active
+KP-HDPE-001,HDPE & BOPP Laminated Bags,HDPE Coated Kraft Sack,Open Mouth,25 Kg,2 Ply + Coating,Kraft + HDPE,Chemicals,Active
+KP-HDPE-002,HDPE & BOPP Laminated Bags,HDPE Coated Kraft Sack,Open Mouth,50 Kg,3 Ply + Coating,Kraft + HDPE,Minerals,Active
+KP-HDPE-003,HDPE & BOPP Laminated Bags,HDPE Coated Valve Sack,Valve,50 Kg,3 Ply + Coating,Kraft + HDPE,Cement,Active
+KP-PP-001,PP Woven Bags,Unlaminated PP Sack,Stitched,25 Kg,Single Layer,PP Woven,Grains,Active
+KP-PP-002,PP Woven Bags,Unlaminated PP Sack,Stitched,50 Kg,Single Layer,PP Woven,Rice,Active
+KP-PP-003,PP Woven Bags,Laminated PP Sack,Stitched,25 Kg,Laminated,PP Woven,Fertilizer,Active
+KP-PP-004,PP Woven Bags,Laminated PP Sack,Stitched,50 Kg,Laminated,PP Woven,Animal Feed,Active
+KP-JUTE-001,Jute Bags,Jute Gunny Bag,Stitched,25 Kg,Standard,Jute,Potato,Active
+KP-JUTE-002,Jute Bags,Jute Gunny Bag,Stitched,50 Kg,Standard,Jute,Onion,Active
+KP-JUTE-003,Jute Bags,Jute Gunny Bag,Stitched,75 Kg,Heavy Duty,Jute,Coffee Beans,Active
+KP-JUTE-004,Jute Bags,Jute Gunny Bag,Stitched,100 Kg,Heavy Duty,Jute,Cocoa,Active
