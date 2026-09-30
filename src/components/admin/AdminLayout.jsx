@@ -41,7 +41,6 @@ export default function AdminLayout() {
 
   const navigation = [
     { name: 'Dashboard', href: '/adminpanel', icon: LayoutDashboard },
-    { name: 'RFQ Leads', href: '/adminpanel/leads', icon: Users },
   ];
 
   return (

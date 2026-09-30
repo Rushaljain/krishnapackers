@@ -20,8 +20,8 @@ export default function HomePage({ onOpenQuote }) {
             <div className="bg-slate-50 p-3 md:p-4 rounded-full mb-3 md:mb-4">
               <Award className="h-6 w-6 md:h-7 md:w-7 text-[#0B1730] stroke-[1.5]" />
             </div>
-            <h3 className="text-lg sm:text-xl md:text-[1.75rem] font-bold text-[#C95A08] mb-1 tracking-tight">Est. 1974</h3>
-            <p className="text-slate-500 font-medium text-xs sm:text-sm md:text-base leading-snug">50+ Years of Manufacturing Experience</p>
+            <h3 className="text-lg sm:text-xl md:text-[1.75rem] font-bold text-[#C95A08] mb-1 tracking-tight">50+ Years</h3>
+            <p className="text-slate-500 font-medium text-xs sm:text-sm md:text-base leading-snug">experience in Manufacturing and providing packaging solutions</p>
           </div>
 
           {/* Item 2 */}

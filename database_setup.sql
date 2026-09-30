@@ -52,3 +52,6 @@ CREATE POLICY "Allow auth read access to rfq_leads" ON public.rfq_leads FOR SELE
 
 -- Allow authenticated users to update leads
 CREATE POLICY "Allow auth update to rfq_leads" ON public.rfq_leads FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
+-- Allow authenticated users to delete leads
+CREATE POLICY "Allow auth delete from rfq_leads" ON public.rfq_leads FOR DELETE TO authenticated USING (true);

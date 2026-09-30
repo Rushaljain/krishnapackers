@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Search, Filter, Download } from 'lucide-react';
+import { Loader2, Search, Filter, Download, Mail, Trash2 } from 'lucide-react';
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState([]);
@@ -41,6 +41,24 @@ export default function LeadsPage() {
     } catch (error) {
       console.error("Error updating status:", error);
       alert("Failed to update status");
+    }
+  };
+
+  const deleteLead = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this lead? This cannot be undone.")) return;
+    
+    try {
+      const { error } = await supabase
+        .from('rfq_leads')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setLeads(leads.filter(lead => lead.id !== id));
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      alert("Failed to delete lead");
     }
   };
 
@@ -138,6 +156,7 @@ export default function LeadsPage() {
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requirements</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -179,6 +198,26 @@ export default function LeadsPage() {
                       <option value="Contacted">Contacted</option>
                       <option value="Closed">Closed</option>
                     </select>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-3">
+                      <a 
+                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(lead.email)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-900 transition flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md"
+                        title="Send Gmail"
+                      >
+                        <Mail size={16} />
+                      </a>
+                      <button 
+                        onClick={() => deleteLead(lead.id)}
+                        className="text-red-600 hover:text-red-900 transition flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md"
+                        title="Delete Lead"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
