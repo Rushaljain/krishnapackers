@@ -67,8 +67,8 @@ export default function HomePage({ onOpenQuote }) {
             {[
               { name: "Construction Materials", icon: "Building2", desc: "Packaging solutions for: Cement; Mortar; Tile Adhesives; Plaster; Gypsum Products; Dry-Mix Materials; Other Construction Powders." },
               { name: "Chemicals", icon: "FlaskConical", desc: "Packaging designed for a wide range of chemical and industrial materials, with specifications tailored to product characteristics and handling." },
-              { name: "Agriculture & Animal Feed", icon: "Wheat", desc: "Solutions for: Seeds; Animal Feed; Grains; Agricultural Products; Fertilizers; Other Bulk Agricultural Materials." },
-              { name: "Food & Ingredients", icon: "Utensils", desc: "Packaging solutions for selected food ingredients and dry bulk products where product protection, hygiene and reliable handling are essential." },
+              { name: "Animal Feeds", icon: "Wheat", desc: "Solutions for: Seeds; Animal Feed; Grains; Agricultural Products; Fertilizers; Other Bulk Agricultural Materials." },
+              { name: "Agriculture and Food Ingredients", icon: "Utensils", desc: "Packaging solutions for selected food ingredients and dry bulk products where product protection, hygiene and reliable handling are essential." },
               { name: "Other Industrial Applications", icon: "Factory", desc: "We also work with businesses across other industries requiring dependable packaging for powdered, granular and bulk products." },
             ].map((industry, idx) => {
               const IconComponent = {
