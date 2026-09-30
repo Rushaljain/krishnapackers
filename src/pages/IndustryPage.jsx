@@ -5,10 +5,9 @@ import ProductCard from '../components/ProductCard';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 
 const industryKeywords = {
-  'construction-materials': ['cement', 'minerals', 'construction', 'building'],
+  'construction-materials': ['cement', 'construction', 'building'],
   'chemicals': ['chemicals', 'fertilizer'],
   'agriculture-animal-feed': ['agro', 'grains', 'rice', 'potato', 'onion', 'fertilizer', 'animal', 'nutrition', 'produce', 'agriculture', 'agricultural', 'feed'],
-  'minerals-industrial-materials': ['minerals', 'chemicals', 'mining'],
   'food-ingredients': ['food', 'flour', 'coffee', 'cocoa', 'rice', 'consumables', 'specialty', 'beverage', 'crop', 'milling'],
   'other-industrial-applications': ['jute', 'paper']
 };
@@ -17,7 +16,6 @@ const industryNames = {
   'construction-materials': 'Construction Materials',
   'chemicals': 'Chemicals',
   'agriculture-animal-feed': 'Agriculture & Animal Feed',
-  'minerals-industrial-materials': 'Minerals & Industrial Materials',
   'food-ingredients': 'Food & Ingredients',
   'other-industrial-applications': 'Other Industrial Applications'
 };
