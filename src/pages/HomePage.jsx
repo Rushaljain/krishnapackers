@@ -66,22 +66,26 @@ export default function HomePage({ onOpenQuote }) {
         <div className="relative">
           <div className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {[
-              { id: "construction-materials", name: "Construction Materials", icon: Building2, desc: "Packaging solutions for: Cement; Mortar; Tile Adhesives; Plaster; Gypsum Products; Dry-Mix Materials; Other Construction Powders." },
-              { id: "chemicals", name: "Chemicals", icon: FlaskConical, desc: "Packaging designed for a wide range of chemical and industrial materials, with specifications tailored to product characteristics and handling." },
-              { id: "animal-feed", name: "Animal Feed", icon: Wheat, desc: "High-strength bags for animal feed, livestock nutrition, seeds, and specialty agricultural feeds." },
-              { id: "agriculture-food-ingredients", name: "Agriculture & Food Ingredients", icon: Utensils, desc: "Packaging solutions for food ingredients, grains, flour, sugar, and dry bulk products where hygiene and protection are essential." },
-              { id: "other-industrial-applications", name: "Other Industrial Applications", icon: Factory, desc: "We also work with businesses across other industries requiring dependable packaging for powdered, granular and bulk products." },
+              { id: "construction-materials", name: "Construction Materials", image: "/industries/construction.jpg", desc: "Packaging solutions for: Cement; Mortar; Tile Adhesives; Plaster; Gypsum Products; Dry-Mix Materials; Other Construction Powders." },
+              { id: "chemicals", name: "Chemicals", image: "/industries/chemicals.jpg", desc: "Packaging designed for a wide range of chemical and industrial materials, with specifications tailored to product characteristics and handling." },
+              { id: "animal-feed", name: "Animal Feed", image: "/industries/animal_feed.jpg", desc: "High-strength bags for animal feed, livestock nutrition, seeds, and specialty agricultural feeds." },
+              { id: "agriculture-food-ingredients", name: "Agriculture & Food Ingredients", image: "/industries/agri_food.jpg", desc: "Packaging solutions for food ingredients, grains, flour, sugar, and dry bulk products where hygiene and protection are essential." },
+              { id: "other-industrial-applications", name: "Other Industrial Applications", image: "/industries/other_industrial.jpg", desc: "We also work with businesses across other industries requiring dependable packaging for powdered, granular and bulk products." },
             ].map((industry) => {
-              const IconComponent = industry.icon;
               return (
-                <Link to={`/industry/${industry.id}`} key={industry.id} className="w-[75vw] sm:w-[280px] md:w-[320px] lg:w-[350px] h-full snap-start flex-shrink-0 group border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 bg-gray-50 flex flex-col cursor-pointer">
-                  <div className="aspect-[5/4] bg-gray-200 flex items-center justify-center relative flex-shrink-0">
-                    <IconComponent className="h-10 w-10 md:h-16 md:w-16 text-gray-400 group-hover:scale-110 group-hover:text-amber-700 transition duration-300" />
+                <Link to={`/industry/${industry.id}`} key={industry.id} className="w-[75vw] sm:w-[280px] md:w-[320px] lg:w-[350px] h-full snap-start flex-shrink-0 group border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 bg-white flex flex-col cursor-pointer">
+                  <div className="aspect-[5/4] bg-gray-100 overflow-hidden relative flex-shrink-0">
+                    <img src={industry.image} alt={industry.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                    <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-md">
+                      <ChevronRight className="text-amber-700 w-4 h-4 md:w-5 md:h-5"/>
+                    </div>
                   </div>
                   <div className="p-4 md:p-5 flex-1 flex flex-col">
                     <h3 className="text-lg font-bold mb-1 text-gray-900 line-clamp-1">{industry.name}</h3>
-                    <p className="text-gray-600 text-xs sm:text-sm mb-4">{industry.desc}</p>
-                    <span className="text-amber-700 font-semibold text-xs sm:text-sm text-left mt-auto">View Products &rarr;</span>
+                    <p className="text-gray-600 text-xs sm:text-sm mb-4 line-clamp-2">{industry.desc}</p>
+                    <span className="text-amber-700 font-semibold text-xs sm:text-sm text-left mt-auto flex items-center gap-1 group-hover:translate-x-1 transition">
+                      View Products &rarr;
+                    </span>
                   </div>
                 </Link>
               );

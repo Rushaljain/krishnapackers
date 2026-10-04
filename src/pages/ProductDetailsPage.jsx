@@ -48,7 +48,7 @@ export default function ProductDetailsPage() {
     );
   }
 
-  const imageUrl = "https://images.unsplash.com/photo-1601598851547-4302969d0614?auto=format&fit=crop&w=1200&q=80";
+  const imageUrl = product.image_url || "https://images.unsplash.com/photo-1601598851547-4302969d0614?auto=format&fit=crop&w=1200&q=80";
 
   return (
     <div className="bg-gray-50 pt-20">
