@@ -66,11 +66,11 @@ export default function HomePage({ onOpenQuote }) {
         <div className="relative">
           <div className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {[
-              { id: "construction-materials", name: "Construction Materials", image: "/industries/construction.jpg", desc: "Packaging solutions for: Cement; Mortar; Tile Adhesives; Plaster; Gypsum Products; Dry-Mix Materials; Other Construction Powders." },
-              { id: "chemicals", name: "Chemicals", image: "/industries/chemicals.jpg", desc: "Packaging designed for a wide range of chemical and industrial materials, with specifications tailored to product characteristics and handling." },
-              { id: "animal-feed", name: "Animal Feed", image: "/industries/animal_feed.jpg", desc: "High-strength bags for animal feed, livestock nutrition, seeds, and specialty agricultural feeds." },
-              { id: "agriculture-food-ingredients", name: "Agriculture & Food Ingredients", image: "/industries/agri_food.jpg", desc: "Packaging solutions for food ingredients, grains, flour, sugar, and dry bulk products where hygiene and protection are essential." },
-              { id: "other-industrial-applications", name: "Other Industrial Applications", image: "/industries/other_industrial.jpg", desc: "We also work with businesses across other industries requiring dependable packaging for powdered, granular and bulk products." },
+              { id: "construction-materials", name: "Construction Materials", image: "/industries/construction.webp", desc: "Packaging solutions for: Cement; Mortar; Tile Adhesives; Plaster; Gypsum Products; Dry-Mix Materials; Other Construction Powders." },
+              { id: "chemicals", name: "Chemicals", image: "/industries/chemicals.webp", desc: "Packaging designed for a wide range of chemical and industrial materials, with specifications tailored to product characteristics and handling." },
+              { id: "animal-feed", name: "Animal Feed", image: "/industries/animal_feed.webp", desc: "High-strength bags for animal feed, livestock nutrition, seeds, and specialty agricultural feeds." },
+              { id: "agriculture-food-ingredients", name: "Agriculture & Food Ingredients", image: "/industries/agri_food.webp", desc: "Packaging solutions for food ingredients, grains, flour, sugar, and dry bulk products where hygiene and protection are essential." },
+              { id: "other-industrial-applications", name: "Other Industrial Applications", image: "/industries/other_industrial.webp", desc: "We also work with businesses across other industries requiring dependable packaging for powdered, granular and bulk products." },
             ].map((industry) => {
               return (
                 <Link to={`/industry/${industry.id}`} key={industry.id} className="w-[75vw] sm:w-[280px] md:w-[320px] lg:w-[350px] h-full snap-start flex-shrink-0 group border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 bg-white flex flex-col cursor-pointer">
