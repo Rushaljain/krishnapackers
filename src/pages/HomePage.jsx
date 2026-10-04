@@ -5,7 +5,6 @@ import Hero from '../components/Hero';
 import Infrastructure from '../components/Infrastructure';
 import Services from '../components/Services';
 import Testimonials from '../components/Testimonials';
-import { Factory as FactoryIcon, Award, ShieldCheck, Leaf } from 'lucide-react';
 
 export default function HomePage({ onOpenQuote }) {
   return (
