@@ -1,10 +1,12 @@
 import React from 'react';
-import { Package, ChevronRight, Building2, FlaskConical, Wheat, Gem, Utensils, Factory, Award, ShieldCheck, Leaf } from 'lucide-react';
+import { Package, ChevronRight, Building2, FlaskConical, Wheat, Utensils, Factory, Award, ShieldCheck, Leaf } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero';
 import Infrastructure from '../components/Infrastructure';
 import Services from '../components/Services';
 import Testimonials from '../components/Testimonials';
+import productsData from '../data/products.json';
+import ProductCard from '../components/ProductCard';
 
 export default function HomePage({ onOpenQuote }) {
   return (
@@ -64,24 +66,15 @@ export default function HomePage({ onOpenQuote }) {
         <div className="relative">
           <div className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {[
-              { name: "Construction Materials", icon: "Building2", desc: "Packaging solutions for: Cement; Mortar; Tile Adhesives; Plaster; Gypsum Products; Dry-Mix Materials; Other Construction Powders." },
-              { name: "Chemicals", icon: "FlaskConical", desc: "Packaging designed for a wide range of chemical and industrial materials, with specifications tailored to product characteristics and handling." },
-              { name: "Animal Feeds", icon: "Wheat", desc: "Solutions for: Seeds; Animal Feed; Grains; Agricultural Products; Fertilizers; Other Bulk Agricultural Materials." },
-              { name: "Agriculture and Food Ingredients", icon: "Utensils", desc: "Packaging solutions for selected food ingredients and dry bulk products where product protection, hygiene and reliable handling are essential." },
-              { name: "Other Industrial Applications", icon: "Factory", desc: "We also work with businesses across other industries requiring dependable packaging for powdered, granular and bulk products." },
-            ].map((industry, idx) => {
-              const IconComponent = {
-                "Building2": Building2,
-                "FlaskConical": FlaskConical,
-                "Wheat": Wheat,
-                "Gem": Gem,
-                "Utensils": Utensils,
-                "Factory": Factory,
-              }[industry.icon];
-
-              const hashId = industry.name.toLowerCase().replace(/[\s\u0026/]+/g, '-');
+              { id: "construction-materials", name: "Construction Materials", icon: Building2, desc: "Packaging solutions for: Cement; Mortar; Tile Adhesives; Plaster; Gypsum Products; Dry-Mix Materials; Other Construction Powders." },
+              { id: "chemicals", name: "Chemicals", icon: FlaskConical, desc: "Packaging designed for a wide range of chemical and industrial materials, with specifications tailored to product characteristics and handling." },
+              { id: "animal-feed", name: "Animal Feed", icon: Wheat, desc: "High-strength bags for animal feed, livestock nutrition, seeds, and specialty agricultural feeds." },
+              { id: "agriculture-food-ingredients", name: "Agriculture & Food Ingredients", icon: Utensils, desc: "Packaging solutions for food ingredients, grains, flour, sugar, and dry bulk products where hygiene and protection are essential." },
+              { id: "other-industrial-applications", name: "Other Industrial Applications", icon: Factory, desc: "We also work with businesses across other industries requiring dependable packaging for powdered, granular and bulk products." },
+            ].map((industry) => {
+              const IconComponent = industry.icon;
               return (
-                <Link to={`/industry/${hashId}`} key={idx} className="w-[75vw] sm:w-[280px] md:w-[320px] lg:w-[350px] h-full snap-start flex-shrink-0 group border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 bg-gray-50 flex flex-col cursor-pointer">
+                <Link to={`/industry/${industry.id}`} key={industry.id} className="w-[75vw] sm:w-[280px] md:w-[320px] lg:w-[350px] h-full snap-start flex-shrink-0 group border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 bg-gray-50 flex flex-col cursor-pointer">
                   <div className="aspect-[5/4] bg-gray-200 flex items-center justify-center relative flex-shrink-0">
                     <IconComponent className="h-10 w-10 md:h-16 md:w-16 text-gray-400 group-hover:scale-110 group-hover:text-amber-700 transition duration-300" />
                   </div>
@@ -99,7 +92,7 @@ export default function HomePage({ onOpenQuote }) {
         </div>
       </div>
 
-      {/* 3x2 PRODUCT GRID TEASER */}
+      {/* EXPLORE OUR PRODUCTS CAROUSEL */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
@@ -109,31 +102,12 @@ export default function HomePage({ onOpenQuote }) {
 
           <div className="relative">
             <div className="flex gap-4 md:gap-6 overflow-x-auto pb-8 pt-4 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              {[
-                { name: "Kraft Paper Bags", desc: "Multi-layer paper packaging solutions designed for strength, protection and reliable handling." },
-                { name: "PP Woven Bags", desc: "Durable woven polypropylene bags providing strength, flexibility and dependable performance." },
-                { name: "Multiwall & Valve Bags", desc: "High-performance bags designed for efficient filling and secure handling of powdered/granular products." },
-                { name: "HDPE & BOPP Laminated Bags", desc: "Combining woven strength with high-quality printing and enhanced visual presentation." },
-                { name: "Jute Bags", desc: "Premium natural fiber bags leveraging our 50 years of manufacturing excellence." },
-                { name: "FIBC / Jumbo Bags", desc: "Flexible Intermediate Bulk Containers for efficient handling and storage of bulk materials." },
-              ].map((prod, idx) => {
-                const hashId = prod.name.toLowerCase().replace(/[\s\u0026/]+/g, '-');
-                return (
-                  <Link key={idx} to={`/our-products#${hashId}`} className="w-[75vw] sm:w-[280px] md:w-[320px] lg:w-[350px] h-full snap-start flex-shrink-0 group cursor-pointer border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 bg-gray-50 flex flex-col">
-                    <div className="aspect-[5/4] bg-gray-200 flex items-center justify-center relative flex-shrink-0">
-                      <Package className="h-10 w-10 md:h-16 md:w-16 text-gray-400 group-hover:scale-110 transition duration-300" />
-                      <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-white p-1 md:p-2 rounded-full shadow-md">
-                        <ChevronRight className="text-amber-700 w-4 h-4 md:w-5 md:h-5" />
-                      </div>
-                    </div>
-                    <div className="p-4 md:p-5 flex-1 flex flex-col">
-                      <h3 className="text-lg font-bold mb-1 line-clamp-1 text-gray-900">{prod.name}</h3>
-                      <p className="text-gray-600 text-xs sm:text-sm mb-4">{prod.desc}</p>
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm text-left mt-auto">View Specifications &rarr;</span>
-                    </div>
-                  </Link>
-                );
-              })}
+              {productsData.map((product) => (
+                <div key={product.sku_code} className="snap-start flex-shrink-0 flex">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+              
               <div className="w-[75vw] sm:w-[280px] md:w-[320px] lg:w-[350px] h-full snap-start flex-shrink-0 group cursor-pointer border-2 border-dashed border-amber-700 rounded-xl overflow-hidden hover:bg-amber-50 transition duration-300 flex flex-col items-center justify-center text-center p-6 bg-white relative">
                 <div className="bg-amber-100 p-3 md:p-4 rounded-full mb-3 md:mb-4 group-hover:scale-110 transition duration-300">
                   <Package className="h-8 w-8 md:h-10 md:w-10 text-amber-800" />

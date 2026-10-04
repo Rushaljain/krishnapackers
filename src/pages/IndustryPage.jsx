@@ -4,19 +4,11 @@ import productsData from '../data/products.json';
 import ProductCard from '../components/ProductCard';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 
-const industryKeywords = {
-  'construction-materials': ['cement', 'construction', 'building'],
-  'chemicals': ['chemicals', 'fertilizer'],
-  'agriculture-animal-feed': ['agro', 'grains', 'rice', 'potato', 'onion', 'fertilizer', 'animal', 'nutrition', 'produce', 'agriculture', 'agricultural', 'feed'],
-  'food-ingredients': ['food', 'flour', 'coffee', 'cocoa', 'rice', 'consumables', 'specialty', 'beverage', 'crop', 'milling'],
-  'other-industrial-applications': ['jute', 'paper']
-};
-
 const industryNames = {
   'construction-materials': 'Construction Materials',
   'chemicals': 'Chemicals',
-  'agriculture-animal-feed': 'Agriculture & Animal Feed',
-  'food-ingredients': 'Food & Ingredients',
+  'animal-feed': 'Animal Feed',
+  'agriculture-food-ingredients': 'Agriculture & Food Ingredients',
   'other-industrial-applications': 'Other Industrial Applications'
 };
 
@@ -25,20 +17,14 @@ export default function IndustryPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { industryId } = useParams();
 
-  const keywords = industryKeywords[industryId];
-  if (!keywords) {
+  const industryName = industryNames[industryId];
+  if (!industryName) {
     return <Navigate to="/" replace />;
   }
 
-  const industryName = industryNames[industryId];
-
-  // Filter products by industry keywords
+  // Filter products by matching the industries array in products.json
   const industryProducts = products.filter(product => {
-    const app = (product.application || '').toLowerCase();
-    const cat = (product.product_category || '').toLowerCase();
-    
-    // Check if any keyword matches the application or category name
-    return keywords.some(kw => app.includes(kw) || cat.includes(kw));
+    return product.industries && product.industries.includes(industryId);
   });
 
   return (
@@ -91,7 +77,7 @@ export default function IndustryPage() {
           </div>
 
           <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-            Browse packaging products built for the {industryName} industry.
+            Browse packaging products engineered for the {industryName} industry.
           </p>
           <div className="w-24 h-1 bg-amber-700 mx-auto mt-6 rounded-full"></div>
         </div>
