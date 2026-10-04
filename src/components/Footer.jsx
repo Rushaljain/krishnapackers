@@ -22,6 +22,7 @@ export default function Footer({ onOpenQuote }) {
               <li><Link to="/our-products" className="hover:text-amber-700 transition">Product Catalog</Link></li>
               <li><button onClick={onOpenQuote} className="text-amber-700 font-medium hover:text-amber-800 transition">Request a Quote</button></li>
               <li><button onClick={onOpenQuote} className="hover:text-amber-700 transition">Order a Sample</button></li>
+              <li><Link to="/privacy-policy" className="hover:text-amber-700 transition font-medium">Privacy Policy</Link></li>
             </ul>
           </div>
           <div>
@@ -63,8 +64,11 @@ export default function Footer({ onOpenQuote }) {
 
       </div>
       
-      <div className="max-w-7xl mx-auto px-4 text-center text-gray-400 text-sm border-t border-gray-100 pt-8">
-        <p>© {new Date().getFullYear()} Krishnna Makali Global. All rights reserved.</p>
+      <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center text-gray-500 text-sm border-t border-gray-100 pt-8 gap-4">
+        <p>© {new Date().getFullYear()} Krishnna Makali Global Pvt. Ltd. All rights reserved.</p>
+        <div className="flex gap-6 text-xs text-gray-500">
+          <Link to="/privacy-policy" className="hover:text-amber-700 transition">Privacy Policy (DPDP Act, 2023)</Link>
+        </div>
       </div>
     </footer>
   );

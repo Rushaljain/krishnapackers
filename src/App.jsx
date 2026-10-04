@@ -11,6 +11,7 @@ import AboutUsPage from './pages/AboutUsPage';
 import ScrollToTop from './components/ScrollToTop';
 import QuoteModal from './components/QuoteModal';
 import GalleryPage from './pages/GalleryPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 // Admin Imports
 import AdminLogin from './pages/admin/AdminLogin';
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="industry/:industryId" element={<IndustryPage />} />
           <Route path="product/:id" element={<ProductDetailsPage />} />
           <Route path="gallery" element={<GalleryPage />} />
+          <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
         </Route>
       </Routes>
 
