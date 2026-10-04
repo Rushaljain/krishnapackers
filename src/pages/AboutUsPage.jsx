@@ -1,8 +1,8 @@
 import React from 'react';
 import { 
-  ArrowRight, Image as ImageIcon, ShieldCheck, CheckCircle, 
-  Settings, Users, Calendar, Briefcase, Box, Globe, Package, HeartHandshake,
-  Download, ArrowDown
+  ArrowRight, Image as ImageIcon, ShieldCheck, 
+  Settings, Users, Briefcase, Box, Package, HeartHandshake,
+  ArrowDown
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -79,26 +79,27 @@ export default function AboutUsPage() {
             </p>
           </div>
           
-          <div className="grid grid-cols-2 gap-8 md:gap-12">
-            <div className="flex flex-col items-center text-center">
-              <Calendar className="h-8 w-8 text-blue-900 mb-3" />
-              <span className="text-3xl font-extrabold text-gray-900">1974</span>
-              <span className="text-sm text-gray-500 font-medium mt-1">Year Founded</span>
+          {/* Triangular arrangement for remaining 3 stats */}
+          <div className="flex flex-col items-center justify-center gap-6">
+            {/* Top Stat (Triangle Apex) */}
+            <div className="flex flex-col items-center text-center p-6 bg-gradient-to-b from-amber-50 to-white rounded-2xl border border-amber-100 shadow-sm w-56 transform hover:-translate-y-1 transition duration-300">
+              <Users className="h-10 w-10 text-amber-700 mb-3" />
+              <span className="text-4xl font-extrabold text-gray-900">50+</span>
+              <span className="text-sm text-gray-600 font-semibold mt-1">Years of Experience</span>
             </div>
-            <div className="flex flex-col items-center text-center">
-              <Users className="h-8 w-8 text-blue-900 mb-3" />
-              <span className="text-3xl font-extrabold text-gray-900">50+</span>
-              <span className="text-sm text-gray-500 font-medium mt-1">Years of Experience</span>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <Package className="h-8 w-8 text-blue-900 mb-3" />
-              <span className="text-3xl font-extrabold text-gray-900">10+</span>
-              <span className="text-sm text-gray-500 font-medium mt-1">Products</span>
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <Briefcase className="h-8 w-8 text-blue-900 mb-3" />
-              <span className="text-3xl font-extrabold text-gray-900">6+</span>
-              <span className="text-sm text-gray-500 font-medium mt-1">Industries Served</span>
+
+            {/* Bottom 2 Stats (Triangle Base) */}
+            <div className="flex items-center justify-center gap-6 md:gap-8 w-full">
+              <div className="flex flex-col items-center text-center p-5 bg-white rounded-2xl border border-gray-100 shadow-sm w-44 hover:shadow-md transition duration-300">
+                <Package className="h-8 w-8 text-blue-900 mb-2" />
+                <span className="text-3xl font-extrabold text-gray-900">10+</span>
+                <span className="text-sm text-gray-600 font-medium mt-1">Products</span>
+              </div>
+              <div className="flex flex-col items-center text-center p-5 bg-white rounded-2xl border border-gray-100 shadow-sm w-44 hover:shadow-md transition duration-300">
+                <Briefcase className="h-8 w-8 text-blue-900 mb-2" />
+                <span className="text-3xl font-extrabold text-gray-900">5+</span>
+                <span className="text-sm text-gray-600 font-medium mt-1">Industries Served</span>
+              </div>
             </div>
           </div>
         </div>
@@ -122,7 +123,7 @@ export default function AboutUsPage() {
                 From experience to a focused future.
               </h2>
               <p className="text-gray-600 text-lg leading-relaxed mb-4">
-                Krishnna Makali Global is backed by the knowledge and experience developed through <strong>Krishna Packers</strong> and <strong>Apco Traders</strong>.
+                Krishnna Makali Global is backed by the knowledge and experience developed through <strong>Apco Traders</strong> and <strong>Krishna Packers</strong>.
               </p>
               <p className="text-gray-600 text-lg leading-relaxed mb-4">
                 Over the years, these businesses have provided valuable exposure to packaging, products, customers and commercial operations. This foundation has helped shape our understanding of what businesses expect from a dependable packaging partner.
@@ -135,12 +136,12 @@ export default function AboutUsPage() {
             {/* Timeline */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 pt-6 border-t border-gray-200">
               <div className="flex flex-col">
-                <span className="font-bold text-blue-950">Krishna Packers</span>
+                <span className="font-bold text-blue-950">Apco Traders</span>
                 <span className="text-xs text-gray-500">Early operations</span>
               </div>
               <ArrowRight className="text-orange-500 hidden sm:block" size={20} />
               <div className="flex flex-col border-l-2 sm:border-l-0 border-orange-200 pl-4 sm:pl-0 ml-2 sm:ml-0">
-                <span className="font-bold text-blue-950">Apco Traders</span>
+                <span className="font-bold text-blue-950">Krishna Packers</span>
                 <span className="text-xs text-gray-500">Expanded experience</span>
               </div>
               <ArrowRight className="text-orange-500 hidden sm:block" size={20} />
