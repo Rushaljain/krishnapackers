@@ -14,6 +14,7 @@ export default function Footer({ onOpenQuote }) {
             <ul className="space-y-3 text-gray-600">
               <li><Link to="/about" className="hover:text-amber-700 transition">Company Overview</Link></li>
               <li><Link to="/gallery" className="hover:text-amber-700 transition">Infrastructure</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-amber-700 transition font-medium">Privacy Policy</Link></li>
             </ul>
           </div>
           <div>
@@ -22,7 +23,6 @@ export default function Footer({ onOpenQuote }) {
               <li><Link to="/our-products" className="hover:text-amber-700 transition">Product Catalog</Link></li>
               <li><button onClick={onOpenQuote} className="text-amber-700 font-medium hover:text-amber-800 transition">Request a Quote</button></li>
               <li><button onClick={onOpenQuote} className="hover:text-amber-700 transition">Order a Sample</button></li>
-              <li><Link to="/privacy-policy" className="hover:text-amber-700 transition font-medium">Privacy Policy</Link></li>
             </ul>
           </div>
           <div>
