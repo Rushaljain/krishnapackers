@@ -155,9 +155,14 @@ export default function ProductDetailsPage() {
                 <h4 className="text-lg font-bold text-amber-900 mb-2 flex items-center gap-2">
                   <Shield className="w-5 h-5 text-amber-700" /> Custom Industrial Packaging
                 </h4>
-                <p className="text-amber-800/90 text-sm leading-relaxed">
-                  We know that every business is unique, and your packaging should reflect that! We are fully equipped to tailor our solutions to your exact requirements. From custom dimensions and specific materials to specialized printing, construction, and closure systems—our team is dedicated to supporting you every step of the way to ensure the perfect packaging fit for your application.
-                </p>
+                <div className="space-y-3">
+                  <p className="text-amber-800/90 text-sm leading-relaxed">
+                    We know that every business is unique, and your packaging should reflect that! We are fully equipped to tailor our solutions to your exact requirements. From custom dimensions and specific materials to specialized construction and closure systems—our team is dedicated to supporting you every step of the way to ensure the perfect packaging fit for your application.
+                  </p>
+                  <p className="text-amber-800/90 text-sm leading-relaxed">
+                    <strong className="text-amber-900">Advanced Custom Printing:</strong> We offer premium Flex and DTG printing solutions to elevate your brand's visibility with vibrant, durable, and high-resolution graphics tailored perfectly to your packaging design.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
