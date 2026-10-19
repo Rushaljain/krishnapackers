@@ -5,6 +5,7 @@ import {
   ArrowDown
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BaachkoLogo from '../components/BaachkoLogo';
 
 const MediaPlaceholder = ({ title, subtitle, className = "" }) => (
   <div className={`bg-gray-200 flex flex-col items-center justify-center border-2 border-dashed border-gray-400 p-6 text-center ${className}`}>
@@ -28,7 +29,7 @@ export default function AboutUsPage() {
               Packaging built for a stronger tomorrow.
             </h1>
             <p className="text-lg text-gray-600 leading-relaxed max-w-lg">
-              Krishnna Makali Global Pvt. Ltd. is an industrial packaging company focused on delivering reliable, high-quality packaging solutions to businesses across diverse industries.
+              Baachko Pvt. Ltd. is an industrial packaging company focused on delivering reliable, high-quality packaging solutions to businesses across diverse industries.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Link to="/products" className="bg-orange-600 text-white px-8 py-3 rounded text-center font-bold hover:bg-orange-700 transition shadow-md flex items-center justify-center gap-2">
@@ -123,13 +124,13 @@ export default function AboutUsPage() {
                 From experience to a focused future.
               </h2>
               <p className="text-gray-600 text-lg leading-relaxed mb-4">
-                Krishnna Makali Global is backed by the knowledge and experience developed through <strong>Apco Traders</strong> and <strong>Krishna Packers</strong>.
+                Baachko is backed by the knowledge and experience developed through <strong>Apco Traders</strong> and <strong>Krishna Packers</strong>.
               </p>
               <p className="text-gray-600 text-lg leading-relaxed mb-4">
                 Over the years, these businesses have provided valuable exposure to packaging, products, customers and commercial operations. This foundation has helped shape our understanding of what businesses expect from a dependable packaging partner.
               </p>
               <p className="text-gray-600 text-lg leading-relaxed">
-                Today, Krishnna Makali Global continues this journey with a dedicated focus on industrial packaging solutions and a vision for developing long-term business relationships.
+                Today, Baachko continues this journey with a dedicated focus on industrial packaging solutions and a vision for developing long-term business relationships.
               </p>
             </div>
 
@@ -146,8 +147,10 @@ export default function AboutUsPage() {
               </div>
               <ArrowRight className="text-orange-500 hidden sm:block" size={20} />
               <div className="flex flex-col border-l-2 sm:border-l-0 border-orange-500 pl-4 sm:pl-0 ml-2 sm:ml-0">
-                <span className="font-bold text-blue-950">Krishnna Makali Global</span>
-                <span className="text-xs text-gray-500">A focused packaging business</span>
+                <span className="font-bold text-blue-950 flex items-center">
+                  <BaachkoLogo className="h-5 w-auto text-[#0B1730]" />
+                </span>
+                <span className="text-xs text-gray-500 mt-0.5">A focused packaging business</span>
               </div>
             </div>
           </div>

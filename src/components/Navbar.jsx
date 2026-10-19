@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Menu, X, ChevronDown, Download, Package } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BaachkoLogo from './BaachkoLogo';
 
 export default function Navbar({ onOpenQuote }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,8 +16,8 @@ export default function Navbar({ onOpenQuote }) {
     <header className="fixed top-0 w-full bg-white shadow-md z-50">
       <div className="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2 order-2 md:order-1">
-          <img src="/Logo_Favicon.png" alt="Krishnna Makali Global Logo" className="h-10 w-auto" />
-          <span className="text-2xl font-bold text-gray-900 tracking-tight">Krishnna Makali Global</span>
+          <img src="/Logo_Favicon.png" alt="Baachko Logo" className="h-10 w-auto" />
+          <BaachkoLogo className="h-7 md:h-8 w-auto text-[#0B1730]" />
         </Link>
 
         {/* Desktop Nav */}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Award, ShieldCheck, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BaachkoLogo from './BaachkoLogo';
 
 export default function Hero({ onOpenQuote }) {
   return (
@@ -19,9 +20,10 @@ export default function Hero({ onOpenQuote }) {
             Sustaining Industries
           </span>
           
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-4 drop-shadow-lg leading-[1.1]">
-            KRISHNNA MAKALI<br/>GLOBAL
-          </h1>
+          <div className="mb-6">
+            <h1 className="sr-only">Baachko</h1>
+            <BaachkoLogo className="h-14 sm:h-18 md:h-22 w-auto text-white drop-shadow-lg" />
+          </div>
           <p className="text-lg md:text-2xl text-gray-200 mb-8 font-light drop-shadow-md">
             50 Years of Excellence in Packaging Solutions
           </p>

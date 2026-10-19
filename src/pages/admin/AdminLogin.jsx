@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import BaachkoLogo from '../../components/BaachkoLogo';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('karan.apcotraders@gmail.com');
@@ -31,10 +32,9 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-2 text-center text-3xl font-extrabold text-amber-900 tracking-tight">
-          Krishna Makali Global
-        </h2>
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <BaachkoLogo className="h-10 w-auto mx-auto text-[#0B1730] mb-2" />
+        <h2 className="sr-only">Baachko</h2>
         <p className="mt-2 text-center text-sm text-gray-600 font-medium tracking-widest uppercase">
           Admin Portal
         </p>

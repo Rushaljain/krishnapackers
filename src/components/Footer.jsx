@@ -1,6 +1,7 @@
 import React from 'react';
 import { Package, Phone, Mail, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BaachkoLogo from './BaachkoLogo';
 
 export default function Footer({ onOpenQuote }) {
   return (
@@ -54,8 +55,8 @@ export default function Footer({ onOpenQuote }) {
         {/* Logo Right */}
         <div className="md:col-span-4 flex flex-col items-start md:items-end md:text-right border-t md:border-t-0 pt-8 md:pt-0">
            <div className="flex items-center gap-2 mb-4">
-              <img src="/Logo_Favicon.png" alt="Krishnna Makali Global Logo" className="h-10 w-auto" />
-              <span className="text-2xl font-bold text-gray-900 tracking-tight">Krishnna Makali Global</span>
+              <img src="/Logo_Favicon.png" alt="Baachko Logo" className="h-10 w-auto" />
+              <BaachkoLogo className="h-7 md:h-8 w-auto text-[#0B1730]" />
             </div>
             <p className="text-gray-500 text-sm max-w-xs">
               Providing dependable industrial packaging solutions, built around your specific requirements since 1974.
@@ -65,7 +66,7 @@ export default function Footer({ onOpenQuote }) {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center text-gray-500 text-sm border-t border-gray-100 pt-8 gap-4">
-        <p>© {new Date().getFullYear()} Krishnna Makali Global Pvt. Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Baachko Pvt. Ltd. All rights reserved.</p>
         <div className="flex gap-6 text-xs text-gray-500">
           <Link to="/privacy-policy" className="hover:text-amber-700 transition">Privacy Policy (DPDP Act, 2023)</Link>
         </div>

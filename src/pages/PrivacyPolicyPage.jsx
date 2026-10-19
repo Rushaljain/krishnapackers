@@ -20,10 +20,10 @@ export default function PrivacyPolicyPage() {
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-blue-950 mb-4">Privacy Policy</h1>
           <p className="text-gray-600 leading-relaxed text-sm md:text-base">
-            At <strong>Krishnna Makali Global Pvt. Ltd.</strong>, we are committed to protecting your privacy and ensuring the security of your personal data. This Privacy Policy details how we collect, use, store, and safeguard your personal information in full compliance with India’s <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong>.
+            At <strong>Baachko Pvt. Ltd.</strong>, we are committed to protecting your privacy and ensuring the security of your personal data. This Privacy Policy details how we collect, use, store, and safeguard your personal information in full compliance with India’s <strong>Digital Personal Data Protection (DPDP) Act, 2023</strong>.
           </p>
           <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap justify-between text-xs text-gray-500">
-            <span>Data Fiduciary: <strong>Krishnna Makali Global Pvt. Ltd.</strong></span>
+            <span>Data Fiduciary: <strong>Baachko Pvt. Ltd.</strong></span>
             <span>Effective Date: October 2026</span>
           </div>
         </div>
@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
               This policy applies to all visitors, prospective clients, commercial partners, and users ("Data Principals") accessing our website (<code>www.krishnapackers.co.in</code>) or interacting with our industrial packaging sales team.
             </p>
             <p>
-              <strong>Krishnna Makali Global Pvt. Ltd.</strong> operates as the <strong>Data Fiduciary</strong> under the DPDP Act, 2023, determining the purpose and means of processing personal data collected through our digital forms and inquiries.
+              <strong>Baachko Pvt. Ltd.</strong> operates as the <strong>Data Fiduciary</strong> under the DPDP Act, 2023, determining the purpose and means of processing personal data collected through our digital forms and inquiries.
             </p>
           </section>
 
@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
               <li><strong>Regulatory Compliance:</strong> To maintain tax, commercial, and legal records as mandated under Indian law.</li>
             </ul>
             <p className="text-xs text-gray-500 bg-amber-50 p-4 rounded-xl border border-amber-100">
-              <strong>Consent Notice:</strong> By submitting any form on our website, you provide explicit consent to Krishnna Makali Global Pvt. Ltd. to process your contact details for responding to your quotation request.
+              <strong>Consent Notice:</strong> By submitting any form on our website, you provide explicit consent to Baachko Pvt. Ltd. to process your contact details for responding to your quotation request.
             </p>
           </section>
 
@@ -138,7 +138,7 @@ export default function PrivacyPolicyPage() {
             
             <div className="bg-blue-950 text-white p-6 rounded-2xl shadow-sm space-y-3">
               <h3 className="font-bold text-lg text-amber-400">Grievance Redressal Officer</h3>
-              <p className="text-sm text-gray-200 font-semibold">Krishnna Makali Global Pvt. Ltd.</p>
+              <p className="text-sm text-gray-200 font-semibold">Baachko Pvt. Ltd.</p>
               <div className="space-y-2 text-xs md:text-sm text-gray-300">
                 <div className="flex items-center gap-2">
                   <Mail size={16} className="text-amber-400 flex-shrink-0" />

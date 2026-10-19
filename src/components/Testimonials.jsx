@@ -4,12 +4,12 @@ import { Quote } from 'lucide-react';
 export default function Testimonials() {
   const testimonials = [
     {
-      quote: "Krishnna Makali Global has been our sole supplier for packaging for over a decade. Their consistency in quality and adherence to delivery timelines is unmatched in the industry.",
+      quote: "Baachko has been our sole supplier for packaging for over a decade. Their consistency in quality and adherence to delivery timelines is unmatched in the industry.",
       author: "Procurement Director",
       company: "National Agri-Corp Ltd."
     },
     {
-      quote: "Finding high-quality, dependable packaging without contamination was a challenge until we partnered with Krishnna Makali Global. Excellent quality control.",
+      quote: "Finding high-quality, dependable packaging without contamination was a challenge until we partnered with Baachko. Excellent quality control.",
       author: "Supply Chain Manager",
       company: "Global Coffee Exports"
     },
@@ -19,7 +19,7 @@ export default function Testimonials() {
       company: "Prime Build Materials"
     },
     {
-      quote: "We require specific moisture barriers for our chemical powders, and Krishnna Makali Global developed a custom laminated solution that perfectly fits our rigorous requirements.",
+      quote: "We require specific moisture barriers for our chemical powders, and Baachko developed a custom laminated solution that perfectly fits our rigorous requirements.",
       author: "Plant Manager",
       company: "ChemCore Industries"
     }
