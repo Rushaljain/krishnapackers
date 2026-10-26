@@ -54,9 +54,8 @@ export default function Footer({ onOpenQuote }) {
 
         {/* Logo Right */}
         <div className="md:col-span-4 flex flex-col items-start md:items-end md:text-right border-t md:border-t-0 pt-8 md:pt-0">
-           <div className="flex items-center gap-2 mb-4">
-              <img src="/Logo_Favicon.png" alt="Baachko Logo" className="h-10 w-auto" />
-              <BaachkoLogo className="h-7 md:h-8 w-auto text-[#0B1730]" />
+           <div className="flex items-center mb-4">
+              <BaachkoLogo className="h-8 md:h-9 w-auto text-[#0B1730]" />
             </div>
             <p className="text-gray-500 text-sm max-w-xs">
               Providing dependable industrial packaging solutions, built around your specific requirements since 1974.
