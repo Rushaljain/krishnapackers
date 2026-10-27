@@ -5,11 +5,10 @@ import BaachkoLogo from './BaachkoLogo';
 
 export default function Footer({ onOpenQuote }) {
   return (
-    <footer className="bg-white border-t border-gray-200 pt-16 pb-8">
-      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
-        
-        {/* Quick Links Left - 2 Columns on Mobile, 4 Columns on Large Screens */}
-        <div className="md:col-span-8 lg:col-span-9 grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
+    <footer className="bg-white border-t border-gray-200">
+      {/* Upper Navigation Section (White Background) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 lg:gap-12">
           <div>
             <h4 className="font-bold text-gray-900 mb-3 md:mb-4 text-base md:text-lg">Company</h4>
             <ul className="space-y-2.5 md:space-y-3 text-gray-600 text-sm">
@@ -60,23 +59,35 @@ export default function Footer({ onOpenQuote }) {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Logo Right */}
-        <div className="md:col-span-4 lg:col-span-3 flex flex-col items-start md:items-end md:text-right border-t md:border-t-0 pt-8 md:pt-0">
-           <div className="flex items-center mb-4">
-              <BaachkoLogo className="h-8 md:h-9 w-auto text-[#0B1730]" />
+      {/* Strictly Marked Section with #C95A08 Background */}
+      <div className="bg-[#C95A08] text-white pt-10 pb-8 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
+          {/* Logo & Description */}
+          <div className="flex flex-col items-center md:items-start max-w-md">
+            <div className="flex items-center mb-4">
+              <BaachkoLogo className="h-9 md:h-10 w-auto text-white drop-shadow-sm" strokeWidth={2.5} />
             </div>
-            <p className="text-gray-500 text-sm max-w-xs">
+            <p className="text-white/90 text-sm leading-relaxed max-w-sm">
               Providing dependable industrial packaging solutions, built around your specific requirements since 1974.
             </p>
-        </div>
+          </div>
 
-      </div>
-      
-      <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center text-gray-500 text-sm border-t border-gray-100 pt-8 gap-4">
-        <p>© {new Date().getFullYear()} Baachko Pvt. Ltd. All rights reserved.</p>
-        <div className="flex gap-6 text-xs text-gray-500">
-          <Link to="/privacy-policy" className="hover:text-amber-700 transition">Privacy Policy (DPDP Act, 2023)</Link>
+          {/* Copyright & DPDP Act Link */}
+          <div className="flex flex-col items-center md:items-end justify-center text-white/90 text-xs md:text-sm gap-2 border-t border-white/20 md:border-t-0 pt-6 md:pt-0 w-full md:w-auto">
+            <p className="font-medium text-white">
+              © {new Date().getFullYear()} Baachko Pvt. Ltd. All rights reserved.
+            </p>
+            <div>
+              <Link 
+                to="/privacy-policy" 
+                className="text-white/80 hover:text-white underline transition"
+              >
+                Privacy Policy (DPDP Act, 2023)
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
