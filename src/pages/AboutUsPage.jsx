@@ -39,15 +39,22 @@ export default function AboutUsPage() {
           
           {/* Right Media */}
           <div className="relative">
-            <div className="h-80 md:h-[460px] w-full rounded-2xl overflow-hidden shadow-lg border border-gray-200">
-              <img 
-                src="/factory/1000197409.jpg" 
-                alt="Baachko Manufacturing Facility" 
+            <div className="aspect-[5/3] w-full rounded-2xl overflow-hidden shadow-lg border border-gray-200 relative bg-[#0B1730]">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                poster="/hero-poster.webp"
                 className="w-full h-full object-cover"
-              />
+              >
+                <source src="/hero.webm" type="video/webm" />
+                <source src="/hero.mp4" type="video/mp4" />
+              </video>
             </div>
             {/* Credibility Strip */}
-            <div className="md:absolute md:-bottom-6 md:left-6 md:right-6 bg-blue-950 text-white p-5 rounded-xl shadow-xl grid grid-cols-3 gap-4 text-center mt-4 md:mt-0">
+            <div className="md:absolute md:-bottom-6 md:left-6 md:right-6 bg-blue-950 text-white p-5 rounded-xl shadow-xl grid grid-cols-3 gap-4 text-center mt-4 md:mt-0 z-10">
               <div className="flex flex-col items-center">
                 <Box className="h-6 w-6 text-orange-400 mb-2" />
                 <span className="text-xs md:text-sm font-semibold">Reliable Products</span>
