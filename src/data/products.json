@@ -9,7 +9,7 @@
     "description": "Multi-layer Kraft paper packaging engineered for strength, protection, and reliable industrial handling.",
     "ply_options": ["2 Ply", "3 Ply", "4 Ply"],
     "capacity_options": ["5 Kg", "10 Kg", "25 Kg", "50 Kg"],
-    "industries": ["chemicals", "agriculture-food-ingredients", "other-industrial-applications"],
+    "industries": ["chemicals", "agriculture-food-ingredients"],
     "status": "Active"
   },
   {
