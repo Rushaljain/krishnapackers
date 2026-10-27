@@ -1,16 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X, ChevronDown, Download, Package } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import BaachkoLogo from './BaachkoLogo';
 
 export default function Navbar({ onOpenQuote }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
+  const location = useLocation();
 
   const toggleMenu = (menu) => {
     if (activeMenu === menu) setActiveMenu(null);
     else setActiveMenu(menu);
   };
+
+  // Automatically close mobile menu when navigating
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname, location.hash]);
+
+  // Lock body/html scroll when mobile menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalHtmlOverflow = document.documentElement.style.overflow;
+
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+
+      return () => {
+        document.body.style.overflow = originalBodyOverflow;
+        document.documentElement.style.overflow = originalHtmlOverflow;
+      };
+    }
+  }, [isMenuOpen]);
 
   return (
     <header className="fixed top-0 w-full bg-white shadow-md z-50">
@@ -56,8 +78,14 @@ export default function Navbar({ onOpenQuote }) {
 
       {/* Mobile Hamburger Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-xl pb-4 rounded-b-2xl">
-          <div className="flex flex-col px-4 py-2">
+        <>
+          {/* Backdrop to close menu when tapping outside & lock background touch */}
+          <div 
+            className="fixed inset-0 top-20 bg-black/20 z-40 md:hidden backdrop-blur-[1px]" 
+            onClick={() => setIsMenuOpen(false)}
+          />
+          <div className="md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-2xl pb-6 rounded-b-2xl z-50 max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain">
+            <div className="flex flex-col px-4 py-2">
             
             <Link 
               to="/" 
@@ -108,6 +136,7 @@ export default function Navbar({ onOpenQuote }) {
 
           </div>
         </div>
+        </>
       )}
     </header>
   );
