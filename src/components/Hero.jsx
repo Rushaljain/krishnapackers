@@ -20,6 +20,13 @@ export default function Hero({ onOpenQuote }) {
           <source src="/hero.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-r from-[#0B1730]/75 via-[#0B1730]/50 to-[#0B1730]/25 pointer-events-none" />
+        {/* Dark bottom gradient overlay in the marked area to conceal the watermark */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-[28%] min-h-[110px] pointer-events-none"
+          style={{
+            background: 'linear-gradient(to top, #0B1730 0%, #0B1730 65%, rgba(11, 23, 48, 0) 100%)'
+          }}
+        />
       </div>
       
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10 lg:px-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-10 md:gap-8">

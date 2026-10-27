@@ -318,11 +318,13 @@ export default function AboutUsPage() {
           </div>
 
           <div className="h-full">
-            <MediaPlaceholder 
-              title="QUALITY INSPECTION / MANUFACTURING IMAGE" 
-              subtitle="(Replace with actual image)"
-              className="h-80 md:h-full w-full rounded-lg min-h-[400px]"
-            />
+            <div className="h-80 md:h-full w-full min-h-[400px] rounded-2xl overflow-hidden shadow-xl border border-gray-200">
+              <img 
+                src="/factory/Inspection_image_about_us.png" 
+                alt="Quality Inspection & Manufacturing" 
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
         </div>
       </section>
