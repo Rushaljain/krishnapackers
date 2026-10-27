@@ -24,32 +24,30 @@ export default function AboutUsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           {/* Left Text */}
           <div className="space-y-6">
-            <span className="text-orange-600 font-bold uppercase tracking-widest text-sm">About Us</span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-blue-950 leading-tight">
-              Packaging built for a stronger tomorrow.
-            </h1>
+            <div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-blue-950 tracking-tight mb-3">
+                About Us
+              </h1>
+              <p className="text-xl md:text-2xl font-bold text-orange-600 leading-snug">
+                Packaging built for a stronger tomorrow.
+              </p>
+            </div>
             <p className="text-lg text-gray-600 leading-relaxed max-w-lg">
               Baachko Pvt. Ltd. is an industrial packaging company focused on delivering reliable, high-quality packaging solutions to businesses across diverse industries.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link to="/products" className="bg-orange-600 text-white px-8 py-3 rounded text-center font-bold hover:bg-orange-700 transition shadow-md flex items-center justify-center gap-2">
-                Request a Quote <ArrowRight size={18} />
-              </Link>
-              <a href="#company-at-a-glance" className="bg-white text-blue-900 border border-blue-200 px-8 py-3 rounded text-center font-bold hover:bg-blue-50 transition flex items-center justify-center gap-2">
-                Learn More <ArrowDown size={18} />
-              </a>
-            </div>
           </div>
           
           {/* Right Media */}
           <div className="relative">
-            <MediaPlaceholder 
-              title="FACTORY / PRODUCTION FLOOR PHOTOGRAPH" 
-              subtitle="(Replace with actual image)"
-              className="h-80 md:h-[500px] w-full rounded-lg"
-            />
+            <div className="h-80 md:h-[460px] w-full rounded-2xl overflow-hidden shadow-lg border border-gray-200">
+              <img 
+                src="/factory/1000197409.jpg" 
+                alt="Baachko Manufacturing Facility" 
+                className="w-full h-full object-cover"
+              />
+            </div>
             {/* Credibility Strip */}
-            <div className="md:absolute md:-bottom-6 md:left-8 md:right-8 bg-blue-950 text-white p-6 rounded-lg shadow-xl grid grid-cols-3 gap-4 text-center mt-4 md:mt-0">
+            <div className="md:absolute md:-bottom-6 md:left-6 md:right-6 bg-blue-950 text-white p-5 rounded-xl shadow-xl grid grid-cols-3 gap-4 text-center mt-4 md:mt-0">
               <div className="flex flex-col items-center">
                 <Box className="h-6 w-6 text-orange-400 mb-2" />
                 <span className="text-xs md:text-sm font-semibold">Reliable Products</span>
