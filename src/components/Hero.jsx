@@ -7,11 +7,19 @@ export default function Hero({ onOpenQuote }) {
   return (
     <section className="relative h-[85vh] flex items-center pb-24 md:pb-16 pt-16">
       <div className="absolute inset-0 bg-[#0B1730] z-0 overflow-hidden">
-          <img 
-            src="https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&q=80&w=2000" 
-            alt="[MEDIA: JUTE / HESSIAN MANUFACTURING PHOTOGRAPH]" 
-            className="w-full h-full object-cover opacity-40 mix-blend-multiply"
-          />
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          poster="/hero-poster.webp"
+          className="w-full h-full object-cover opacity-45"
+        >
+          <source src="/hero.webm" type="video/webm" />
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1730]/90 via-[#0B1730]/65 to-[#0B1730]/40 pointer-events-none" />
       </div>
       
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-8 flex flex-col md:flex-row items-center justify-between">
