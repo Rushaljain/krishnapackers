@@ -14,12 +14,12 @@ export default function Hero({ onOpenQuote }) {
           playsInline
           preload="auto"
           poster="/hero-poster.webp"
-          className="w-full h-full object-cover opacity-45"
+          className="w-full h-full object-cover opacity-65"
         >
           <source src="/hero.webm" type="video/webm" />
           <source src="/hero.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1730]/90 via-[#0B1730]/65 to-[#0B1730]/40 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B1730]/70 via-[#0B1730]/45 to-[#0B1730]/20 pointer-events-none" />
       </div>
       
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-8 flex flex-col md:flex-row items-center justify-between">
