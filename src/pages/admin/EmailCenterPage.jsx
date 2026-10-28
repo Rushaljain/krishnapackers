@@ -4,6 +4,68 @@ import {
   RefreshCw, Copy, Check, ExternalLink, Sparkles, Clock, User
 } from 'lucide-react';
 
+function generateBrandedHtml(content, subject, senderName = "Baachko Sales Team") {
+  const formattedBody = content
+    .split('\n\n')
+    .map(p => `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #374151; font-size: 15px;">${p.replace(/\n/g, '<br/>')}</p>`)
+    .join('');
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #e5e7eb;" cellspacing="0" cellpadding="0">
+          <tr>
+            <td style="background-color: #0B1730; padding: 28px 32px; text-align: left; border-bottom: 3px solid #C95A08;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: 0.5px;">BAACHKO</h1>
+                    <p style="margin: 4px 0 0 0; color: #C95A08; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Industrial Packaging Solutions • Est. 1974</p>
+                  </td>
+                  <td align="right">
+                    <span style="display: inline-block; background-color: rgba(255,255,255,0.12); color: #ffffff; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600;">ISO 9001:2015</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 36px 32px 28px 32px; background-color: #ffffff;">
+              ${formattedBody}
+              <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0; color: #111827; font-weight: 700; font-size: 15px;">${senderName}</p>
+                <p style="margin: 2px 0 0 0; color: #6b7280; font-size: 13px;">Baachko Pvt. Ltd. (Krishna Packers)</p>
+                <p style="margin: 2px 0 0 0; color: #C95A08; font-size: 13px; font-weight: 500;">
+                  <a href="https://www.baachko.com" style="color: #C95A08; text-decoration: none;">www.baachko.com</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f9fafb; padding: 24px 32px; text-align: left; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; line-height: 1.5;">
+              <p style="margin: 0 0 8px 0; font-weight: 600; color: #374151;">Manufacturing Plant & Corporate Office:</p>
+              <p style="margin: 0 0 8px 0;">W-234, Khairane Road, TTC Industrial Area, Khairane MIDC, Navi Mumbai - 400705, Maharashtra, India</p>
+              <p style="margin: 0;">Phone: +91 93246 35279 / +91 73030 77339</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
 export default function EmailCenterPage() {
   const [apiKey, setApiKey] = useState(localStorage.getItem('resend_api_key') || '');
   const [senderEmail, setSenderEmail] = useState(
@@ -13,7 +75,6 @@ export default function EmailCenterPage() {
     localStorage.getItem('resend_sender_name') || 'Baachko Industrial Packaging'
   );
 
-  // Status state
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [resendStatus, setResendStatus] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -40,7 +101,6 @@ W-234, Khairane Road, TTC Industrial Area, Navi Mumbai - 400705`
 
   // Sent history
   const [sentHistory, setSentHistory] = useState([]);
-  const [copiedKey, setCopiedKey] = useState('');
 
   useEffect(() => {
     checkConnection();
@@ -56,23 +116,65 @@ W-234, Khairane Road, TTC Industrial Area, Navi Mumbai - 400705`
 
   const checkConnection = async (overrideKey) => {
     setLoadingStatus(true);
+    const keyToUse = overrideKey !== undefined ? overrideKey : apiKey;
+
+    // 1. Try serverless check endpoint
     try {
-      const keyToUse = overrideKey !== undefined ? overrideKey : apiKey;
       const res = await fetch('/api/check-resend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey: keyToUse })
       });
-      const data = await res.json();
-      setResendStatus(data);
-    } catch (err) {
-      setResendStatus({
-        configured: false,
-        error: 'Unable to reach /api/check-resend serverless route.'
-      });
-    } finally {
-      setLoadingStatus(false);
+
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        setResendStatus(data);
+        return;
+      }
+    } catch (e) {}
+
+    // 2. Direct fallback to Resend REST API if serverless route is not yet deployed
+    if (keyToUse) {
+      try {
+        const directRes = await fetch('https://api.resend.com/domains', {
+          headers: { 'Authorization': `Bearer ${keyToUse}` }
+        });
+        const directData = await directRes.json();
+        if (directRes.ok) {
+          setResendStatus({
+            configured: true,
+            validKey: true,
+            domains: directData.data || [],
+            senderEmail: senderEmail || 'sales@baachko.com',
+            message: 'Connected directly to Resend API.'
+          });
+          return;
+        } else {
+          setResendStatus({
+            configured: true,
+            validKey: false,
+            error: directData.message || 'Invalid Resend API Key',
+            domains: []
+          });
+          return;
+        }
+      } catch (err) {
+        setResendStatus({
+          configured: true,
+          validKey: false,
+          error: 'Could not connect to Resend API.',
+          domains: []
+        });
+        return;
+      }
     }
+
+    setResendStatus({
+      configured: false,
+      message: 'Resend API Key is not set. Enter your key below or add RESEND_API_KEY to Vercel.'
+    });
+    setLoadingStatus(false);
   };
 
   const handleSaveSettings = (e) => {
@@ -96,34 +198,73 @@ W-234, Khairane Road, TTC Industrial Area, Navi Mumbai - 400705`
     setSendResult({ type: '', text: '' });
 
     try {
-      const res = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: to.trim(),
-          subject: subject.trim(),
-          message: message.trim(),
-          fromName: senderName.trim(),
-          fromEmail: senderEmail.trim(),
-          apiKey: apiKey.trim() || undefined
-        })
-      });
+      let emailId = null;
 
-      const data = await res.json();
+      // 1. Try serverless endpoint first
+      try {
+        const res = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: to.trim(),
+            subject: subject.trim(),
+            message: message.trim(),
+            fromName: senderName.trim(),
+            fromEmail: senderEmail.trim(),
+            apiKey: apiKey.trim() || undefined
+          })
+        });
 
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Failed to dispatch email.');
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json();
+          if (!res.ok || data.error) {
+            throw new Error(data.error || 'Failed to dispatch email.');
+          }
+          emailId = data.id;
+        } else {
+          throw new Error('FALLBACK_DIRECT');
+        }
+      } catch (err) {
+        // 2. Direct fallback to Resend REST API
+        if (err.message === 'FALLBACK_DIRECT' || !emailId) {
+          if (!apiKey.trim()) {
+            throw new Error('Resend API key is required. Please save your API key in the settings box on the right.');
+          }
+
+          const directRes = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey.trim()}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              from: `${senderName.trim()} <${senderEmail.trim()}>`,
+              to: [to.trim()],
+              subject: subject.trim(),
+              html: generateBrandedHtml(message.trim(), subject.trim(), senderName.trim()),
+              text: message.trim()
+            })
+          });
+
+          const directData = await directRes.json();
+          if (!directRes.ok || directData.error) {
+            throw new Error((directData.error && directData.error.message) || directData.message || 'Resend API rejected the request.');
+          }
+          emailId = directData.id;
+        } else {
+          throw err;
+        }
       }
 
       setSendResult({
         type: 'success',
-        text: `Email successfully dispatched to ${to} (Resend ID: ${data.id})`
+        text: `Email successfully dispatched to ${to} (Resend ID: ${emailId || 'sent'})`
       });
 
-      // Update sent history
       const updatedHistory = [
         {
-          id: data.id,
+          id: emailId,
           to: to,
           contactName: to.split('@')[0],
           company: 'Direct Dispatch',
@@ -146,12 +287,6 @@ W-234, Khairane Road, TTC Industrial Area, Navi Mumbai - 400705`
     } finally {
       setIsSending(false);
     }
-  };
-
-  const copyToClipboard = (text, key) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(''), 2000);
   };
 
   return (
@@ -277,7 +412,7 @@ W-234, Khairane Road, TTC Industrial Area, Navi Mumbai - 400705`
                   className="w-full text-xs font-mono px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
                 />
                 <span className="text-[11px] text-gray-400 mt-1 block">
-                  Stored securely or configure in Vercel as <code className="font-mono">RESEND_API_KEY</code>.
+                  Paste your Resend API Key here (<code className="font-mono">re_...</code>) or configure in Vercel as <code className="font-mono">RESEND_API_KEY</code>.
                 </span>
               </div>
 
