@@ -12,6 +12,52 @@ Disallow: /admin/*
 Disallow: /api/
 Disallow: /api/*
 
+# Explicit Authorization for Google Search & Google AI (Gemini, AI Overviews, SGE)
+User-agent: Googlebot
+Allow: /
+Disallow: /adminpanel
+Disallow: /adminpanel/*
+Disallow: /admin
+Disallow: /admin/*
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /adminpanel
+Disallow: /adminpanel/*
+Disallow: /admin
+Disallow: /admin/*
+
+User-agent: Googlebot-Image
+Allow: /
+Disallow: /adminpanel
+Disallow: /adminpanel/*
+
+# Explicit Authorization for AI Search & Retrieval Crawlers (ChatGPT Search, Perplexity, Claude, Bing)
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /adminpanel
+Disallow: /adminpanel/*
+
+User-agent: GPTBot
+Allow: /
+Disallow: /adminpanel
+Disallow: /adminpanel/*
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /adminpanel
+Disallow: /adminpanel/*
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /adminpanel
+Disallow: /adminpanel/*
+
+User-agent: Bingbot
+Allow: /
+Disallow: /adminpanel
+Disallow: /adminpanel/*
+
 # Host & Sitemap Location
 Host: https://www.baachko.com
 Sitemap: https://www.baachko.com/sitemap.xml
