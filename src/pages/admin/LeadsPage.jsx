@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Search, Filter, Download, Mail, Trash2 } from 'lucide-react';
+import { Loader2, Search, Filter, Download, Mail, Trash2, Send } from 'lucide-react';
+import SendEmailModal from '../../components/admin/SendEmailModal';
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLeadForEmail, setSelectedLeadForEmail] = useState(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   useEffect(() => {
     fetchLeads();
@@ -200,22 +203,32 @@ export default function LeadsPage() {
                     </select>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => {
+                          setSelectedLeadForEmail(lead);
+                          setIsEmailModalOpen(true);
+                        }}
+                        className="text-white bg-[#C95A08] hover:bg-orange-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                        title="Reply via Resend (Custom Domain)"
+                      >
+                        <Mail size={14} /> Reply
+                      </button>
                       <a 
                         href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(lead.email)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-900 transition flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md"
-                        title="Send Gmail"
+                        className="text-gray-500 hover:text-blue-700 transition flex items-center p-1.5 bg-gray-100 hover:bg-blue-50 rounded-lg"
+                        title="Open in Gmail"
                       >
-                        <Mail size={16} />
+                        <Send size={14} />
                       </a>
                       <button 
                         onClick={() => deleteLead(lead.id)}
-                        className="text-red-600 hover:text-red-900 transition flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md"
+                        className="text-red-500 hover:text-red-700 transition flex items-center p-1.5 bg-gray-100 hover:bg-red-50 rounded-lg"
                         title="Delete Lead"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>
@@ -224,7 +237,7 @@ export default function LeadsPage() {
               
               {filteredLeads.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
                     No leads found matching your search.
                   </td>
                 </tr>
@@ -233,6 +246,19 @@ export default function LeadsPage() {
           </table>
         </div>
       </div>
+
+      {/* Resend Email Reply Modal */}
+      <SendEmailModal
+        isOpen={isEmailModalOpen}
+        onClose={() => {
+          setIsEmailModalOpen(false);
+          setSelectedLeadForEmail(null);
+        }}
+        lead={selectedLeadForEmail}
+        onEmailSent={(leadId) => {
+          setLeads(leads.map(l => l.id === leadId ? { ...l, status: 'Contacted' } : l));
+        }}
+      />
 
     </div>
   );

@@ -36,6 +36,20 @@ export default function QuoteModal({ isOpen, onClose }) {
       if (insertError) throw insertError;
       
       setIsSuccess(true);
+
+      // Automated client confirmation email via Resend (non-blocking)
+      try {
+        fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: formData.email,
+            subject: `Inquiry Confirmation - Baachko Industrial Packaging`,
+            message: `Dear ${formData.contact_name},\n\nThank you for reaching out to Baachko Pvt. Ltd. (Krishna Packers).\n\nWe have successfully received your bulk quotation inquiry. Our sales engineering team will review your specifications and contact you within 24 hours.\n\nWarm regards,\nSales Engineering Team\nBaachko Pvt. Ltd.`,
+            fromName: 'Baachko Sales'
+          })
+        }).catch(() => {});
+      } catch (err) {}
       // Auto close after 3 seconds on success
       setTimeout(() => {
         setIsSuccess(false);

@@ -39,6 +39,20 @@ export default function RFQForm({ productSku, productName }) {
       }
       
       setIsSuccess(true);
+
+      // Automated client confirmation email via Resend (non-blocking)
+      try {
+        fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: formData.email,
+            subject: `Inquiry Confirmation - Baachko Packaging (${formData.target_product_sku || 'Custom Packaging'})`,
+            message: `Dear ${formData.contact_name},\n\nThank you for requesting a quotation from Baachko Pvt. Ltd. (Krishna Packers).\n\nWe have received your requirement for ${formData.target_product_sku || 'Industrial Packaging'}${formData.estimated_qty ? ` (Quantity: ${formData.estimated_qty})` : ''}.\n\nOur sales engineering team is reviewing your requirements and will connect with you within 24 hours with complete technical specifications and pricing.\n\nWarm regards,\nSales Engineering Team\nBaachko Pvt. Ltd.`,
+            fromName: 'Baachko Sales'
+          })
+        }).catch(() => {});
+      } catch (err) {}
     } catch (err) {
       console.error("Error submitting RFQ:", err);
       setError(`Failed to submit: ${err.message || err.details || "Unknown error"}`);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, Package } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, Package, Mail } from 'lucide-react';
 
 export default function AdminLayout() {
   const [session, setSession] = useState(null);
@@ -40,7 +40,8 @@ export default function AdminLayout() {
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/adminpanel', icon: LayoutDashboard },
+    { name: 'Leads & Quotes', href: '/adminpanel', icon: LayoutDashboard },
+    { name: 'Mailing Center', href: '/adminpanel/emails', icon: Mail },
   ];
 
   return (

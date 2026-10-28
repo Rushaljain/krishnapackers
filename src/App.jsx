@@ -18,6 +18,7 @@ import Robot from './components/Robot';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './components/admin/AdminLayout';
 import LeadsPage from './pages/admin/LeadsPage';
+import EmailCenterPage from './pages/admin/EmailCenterPage';
 
 function PublicLayout({ onOpenQuote }) {
   return (
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/adminpanel" element={<AdminLayout />}>
           <Route index element={<LeadsPage />} />
           <Route path="leads" element={<LeadsPage />} />
+          <Route path="emails" element={<EmailCenterPage />} />
         </Route>
 
         {/* Public Routes */}
