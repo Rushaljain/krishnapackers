@@ -12,6 +12,7 @@ import ScrollToTop from './components/ScrollToTop';
 import QuoteModal from './components/QuoteModal';
 import GalleryPage from './pages/GalleryPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import Robot from './components/Robot';
 
 // Admin Imports
 import AdminLogin from './pages/admin/AdminLogin';
@@ -36,6 +37,7 @@ export default function App() {
 
   return (
     <Router>
+      <Robot />
       <ScrollToTop />
       <Routes>
         {/* Admin Routes */}

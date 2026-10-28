@@ -1,0 +1,17 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow Internal & Admin Routes
+Disallow: /adminpanel
+Disallow: /adminpanel/
+Disallow: /adminpanel/*
+Disallow: /admin
+Disallow: /admin/
+Disallow: /admin/*
+Disallow: /api/
+Disallow: /api/*
+
+# Host & Sitemap Location
+Host: https://www.baachko.com
+Sitemap: https://www.baachko.com/sitemap.xml
