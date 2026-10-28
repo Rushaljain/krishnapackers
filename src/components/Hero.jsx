@@ -33,16 +33,16 @@ export default function Hero({ onOpenQuote }) {
         {/* Left Box: Brand & Main CTA */}
         <div className="flex flex-col items-start max-w-xl lg:max-w-2xl xl:max-w-3xl text-left">
           <span className="text-[#C95A08] uppercase tracking-[0.25em] text-xs sm:text-sm md:text-base font-extrabold mb-3 sm:mb-4 drop-shadow-sm">
-            Sustaining Industries
+            Baachko • Sustaining Industries
           </span>
           
           <div className="mb-4 sm:mb-6 w-full">
-            <h1 className="sr-only">Baachko</h1>
+            <h1 className="sr-only">Baachko - Official Website & Industrial Packaging Solutions</h1>
             <BaachkoLogo className="w-full max-w-[280px] sm:max-w-[380px] md:max-w-[460px] lg:max-w-[540px] xl:max-w-[620px] h-auto text-white drop-shadow-2xl" />
           </div>
           
           <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-100 mb-6 sm:mb-8 font-light drop-shadow-md leading-relaxed">
-            50 Years of Excellence in Packaging Solutions
+            <span className="font-semibold text-white">Baachko</span> — 50 Years of Excellence in Packaging Solutions
           </p>
           
           <div className="flex flex-wrap gap-3 sm:gap-4 mb-8 sm:mb-10">

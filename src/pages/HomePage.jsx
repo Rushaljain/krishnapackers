@@ -54,6 +54,24 @@ export default function HomePage({ onOpenQuote }) {
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-[#C95A08] rounded-t-md opacity-80"></div>
       </section>
 
+      {/* Brand Introduction & Search Authority Section */}
+      <section className="py-12 md:py-16 bg-white border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <span className="text-[#C95A08] font-bold uppercase tracking-wider text-xs sm:text-sm">Welcome to Baachko</span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0B1730] mt-2 mb-4 tracking-tight">
+            India's Leading Industrial Packaging Sacks Manufacturer
+          </h2>
+          <p className="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed max-w-3xl mx-auto">
+            Backed by over five decades of manufacturing excellence (formerly Krishna Packers & Apco Traders), <strong className="font-semibold text-gray-900">Baachko Pvt. Ltd.</strong> supplies high-performance Multiwall Kraft Paper Sacks, Valve Sacks, HDPE Coated Sacks, PP Woven Bags, BOPP Laminated Bags, and FIBC Jumbo Bulk Bags engineered for demanding industrial, chemical, construction, and agricultural applications.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-700 font-medium">
+            <span className="bg-slate-50 px-4 py-2 rounded-full border border-gray-200">📍 TTC Industrial Area, Navi Mumbai</span>
+            <span className="bg-slate-50 px-4 py-2 rounded-full border border-gray-200">🏆 ISO 9001:2015 Certified Quality</span>
+            <span className="bg-slate-50 px-4 py-2 rounded-full border border-gray-200">⚙️ 50+ Years Manufacturing Heritage</span>
+          </div>
+        </div>
+      </section>
+
       <Infrastructure />
 
       {/* INDUSTRIES WE SERVE */}

@@ -109,9 +109,9 @@ export default function Robot() {
     }
 
     // 3. Dynamic Page Titles, Descriptions, Keywords and Image Previews
-    let pageTitle = 'Baachko | Heavy-Duty Industrial Packaging Solutions | Kraft Sacks, PP Woven & FIBC Bags';
-    let pageDesc = 'Baachko is a premier industrial packaging manufacturer in India with 50+ years of expertise. Multiwall Kraft Paper Sacks, Valve Bags, HDPE Coated Sacks, PP Woven Sacks, BOPP Bags, and FIBC Jumbo Bags.';
-    let pageKeywords = 'Multiwall Kraft Paper Sacks, Kraft Valve Sacks, HDPE Coated Kraft Paper Sacks, PP Woven Sacks, BOPP Bags, Jute Gunny Bags, FIBC Jumbo Bags, Industrial Packaging Manufacturer, Navi Mumbai Packaging Factory, Baachko';
+    let pageTitle = 'Baachko™ | Official Website | Heavy-Duty Industrial Packaging Solutions';
+    let pageDesc = 'Official website of Baachko (Krishna Packers). 50+ years of manufacturing excellence in Multiwall Kraft Paper Sacks, Valve Bags, HDPE Coated Sacks, PP Woven Bags, and FIBC Bulk Bags in Navi Mumbai, India.';
+    let pageKeywords = 'Baachko, Baachko Packaging, Baachko Pvt Ltd, Baachko official website, Baachko Mumbai, Krishna Packers, Multiwall Kraft Paper Sacks, Kraft Valve Sacks, HDPE Coated Kraft Paper Sacks, PP Woven Sacks, BOPP Bags, Jute Gunny Bags, FIBC Jumbo Bags, Industrial Packaging Manufacturer India';
     let pageImageUrl = 'https://www.baachko.com/hero-poster.webp';
 
     let breadcrumbs: Array<{ position: number; name: string; item: string }> = [

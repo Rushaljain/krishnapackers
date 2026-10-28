@@ -37,7 +37,8 @@ export default function Navbar({ onOpenQuote }) {
   return (
     <header className="fixed top-0 w-full bg-white shadow-md z-50">
       <div className="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
-        <Link to="/" className="flex items-center order-2 md:order-1 py-2">
+        <Link to="/" className="flex items-center order-2 md:order-1 py-2" title="Baachko - Home" aria-label="Baachko - Official Home">
+          <span className="sr-only">Baachko</span>
           <BaachkoLogo className="h-8 md:h-9 w-auto text-[#0B1730]" />
         </Link>
 
