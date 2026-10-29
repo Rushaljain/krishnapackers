@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import RFQForm from '../components/RFQForm';
-import { Loader2, CheckCircle2, Layers, Weight, Sliders, Shield } from 'lucide-react';
+import { Loader2, CheckCircle2, Layers, Weight, Sliders, Shield, Box, Tag } from 'lucide-react';
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
@@ -12,6 +12,8 @@ export default function ProductDetailsPage() {
   const [selectedPly, setSelectedPly] = useState('');
   const [selectedCapacity, setSelectedCapacity] = useState('');
   const [selectedLamination, setSelectedLamination] = useState('');
+  const [selectedConstruction, setSelectedConstruction] = useState('');
+  const [selectedMaterial, setSelectedMaterial] = useState('');
 
   useEffect(() => {
     import('../data/products.json').then((module) => {
@@ -19,9 +21,11 @@ export default function ProductDetailsPage() {
       const foundProduct = data.find(p => p.sku_code === id);
       if (foundProduct) {
         setProduct(foundProduct);
-        if (foundProduct.ply_options?.length) setSelectedPly(foundProduct.ply_options[0]);
-        if (foundProduct.capacity_options?.length) setSelectedCapacity(foundProduct.capacity_options[0]);
-        if (foundProduct.lamination_options?.length) setSelectedLamination(foundProduct.lamination_options[0]);
+        setSelectedPly(foundProduct.ply_options?.length ? foundProduct.ply_options[0] : '');
+        setSelectedCapacity(foundProduct.capacity_options?.length ? foundProduct.capacity_options[0] : '');
+        setSelectedLamination(foundProduct.lamination_options?.length ? foundProduct.lamination_options[0] : '');
+        setSelectedConstruction(foundProduct.construction_options?.length ? foundProduct.construction_options[0] : '');
+        setSelectedMaterial(foundProduct.material_options?.length ? foundProduct.material_options[0] : '');
       } else {
         setProduct(null);
       }
@@ -31,6 +35,28 @@ export default function ProductDetailsPage() {
       setLoading(false);
     });
   }, [id]);
+
+  // Compute live configured SKU code based on button selections
+  const configuredSku = useMemo(() => {
+    if (!product) return '';
+    let sku = product.sku_code;
+
+    const specs = [];
+    if (selectedPly) specs.push(selectedPly);
+    if (selectedConstruction) specs.push(selectedConstruction);
+    if (selectedMaterial) specs.push(selectedMaterial);
+    if (selectedLamination) specs.push(selectedLamination);
+
+    if (specs.length > 0) {
+      sku += ` (${specs.join(', ')})`;
+    }
+
+    if (selectedCapacity) {
+      sku += ` [${selectedCapacity}]`;
+    }
+
+    return sku;
+  }, [product, selectedPly, selectedConstruction, selectedMaterial, selectedLamination, selectedCapacity]);
 
   if (loading) {
     return (
@@ -65,6 +91,15 @@ export default function ProductDetailsPage() {
             </div>
 
             <div>
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-100 border border-amber-200 px-3 py-1 rounded-full shadow-2xs">
+                  <Tag className="w-3.5 h-3.5 text-amber-700" />
+                  SKU: {configuredSku}
+                </span>
+                <span className="text-xs text-gray-400 font-medium hidden sm:inline">
+                  • Configured Live
+                </span>
+              </div>
               <h1 className="text-4xl font-extrabold text-gray-900 mb-4">{product.product_name}</h1>
               <p className="text-lg text-gray-600 mb-8">
                 {product.description || `Premium quality ${product.product_name.toLowerCase()} manufactured for heavy-duty industrial handling and optimal product protection.`}
@@ -92,6 +127,56 @@ export default function ProductDetailsPage() {
                           }`}
                         >
                           {ply}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Weave & Construction Options (e.g. Jute Gunny Bags) */}
+                {product.construction_options && product.construction_options.length > 0 && (
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-base">
+                      <Layers className="text-amber-700 w-5 h-5" />
+                      <span>Weave & Construction Options</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {product.construction_options.map((construction) => (
+                        <button
+                          key={construction}
+                          onClick={() => setSelectedConstruction(construction)}
+                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition border ${
+                            selectedConstruction === construction
+                              ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
+                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          {construction}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Material Fabric Options (e.g. PP / HDPE Woven) */}
+                {product.material_options && product.material_options.length > 0 && (
+                  <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <div className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-base">
+                      <Box className="text-amber-700 w-5 h-5" />
+                      <span>Material Fabric Options</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {product.material_options.map((material) => (
+                        <button
+                          key={material}
+                          onClick={() => setSelectedMaterial(material)}
+                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition border ${
+                            selectedMaterial === material
+                              ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
+                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          {material}
                         </button>
                       ))}
                     </div>
@@ -173,9 +258,15 @@ export default function ProductDetailsPage() {
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Technical Specifications</h3>
               <div className="divide-y divide-gray-100">
                 
+                <div className="py-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <span className="text-gray-500 font-medium">Configured SKU</span>
+                  <span className="font-bold text-amber-900 bg-amber-50 px-3 py-1 rounded-lg border border-amber-200 text-sm font-mono self-start sm:self-auto transition-all shadow-2xs">
+                    {configuredSku}
+                  </span>
+                </div>
                 <div className="py-3 flex justify-between items-center">
-                  <span className="text-gray-500">SKU Code</span>
-                  <span className="font-medium text-gray-900">{product.sku_code}</span>
+                  <span className="text-gray-500">Base Catalog Code</span>
+                  <span className="font-medium text-gray-700 font-mono text-sm">{product.sku_code}</span>
                 </div>
                 <div className="py-3 flex justify-between items-center">
                   <span className="text-gray-500">Category</span>
@@ -187,12 +278,24 @@ export default function ProductDetailsPage() {
                 </div>
                 <div className="py-3 flex justify-between items-center">
                   <span className="text-gray-500">Material</span>
-                  <span className="font-medium text-gray-900">{product.material}</span>
+                  <span className="font-medium text-gray-900">{selectedMaterial || product.material}</span>
                 </div>
                 {selectedPly && (
                   <div className="py-3 flex justify-between items-center">
                     <span className="text-gray-500">Selected Ply / Construction</span>
                     <span className="font-semibold text-amber-800">{selectedPly}</span>
+                  </div>
+                )}
+                {selectedConstruction && (
+                  <div className="py-3 flex justify-between items-center">
+                    <span className="text-gray-500">Selected Construction</span>
+                    <span className="font-semibold text-amber-800">{selectedConstruction}</span>
+                  </div>
+                )}
+                {selectedMaterial && (
+                  <div className="py-3 flex justify-between items-center">
+                    <span className="text-gray-500">Selected Fabric</span>
+                    <span className="font-semibold text-amber-800">{selectedMaterial}</span>
                   </div>
                 )}
                 {selectedLamination && (
@@ -212,7 +315,7 @@ export default function ProductDetailsPage() {
             </div>
 
             <RFQForm 
-              productSku={`${product.sku_code}${selectedPly ? ` (${selectedPly})` : ''}${selectedCapacity ? ` [${selectedCapacity}]` : ''}`} 
+              productSku={configuredSku} 
               productName={product.product_name} 
             />
           </div>

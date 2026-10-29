@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Loader2, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-export default function QuoteModal({ isOpen, onClose }) {
+export default function QuoteModal({ isOpen, onClose, productSku, productName }) {
   const [formData, setFormData] = useState({
     contact_name: '',
     company_name: '',
     email: '',
     phone: '',
+    target_product_sku: productSku || '',
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (productSku) {
+      setFormData(prev => ({
+        ...prev,
+        target_product_sku: productSku
+      }));
+    }
+  }, [productSku]);
 
   if (!isOpen) return null;
 
@@ -153,6 +163,18 @@ export default function QuoteModal({ isOpen, onClose }) {
                   />
                 </div>
               </div>
+
+              {formData.target_product_sku && (
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-gray-700">Target Product SKU</label>
+                  <input 
+                    name="target_product_sku"
+                    value={formData.target_product_sku}
+                    readOnly
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-amber-50/50 text-gray-900 font-semibold text-sm outline-none cursor-default font-mono" 
+                  />
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-gray-700">Requirements / Message</label>
