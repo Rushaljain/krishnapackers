@@ -831,19 +831,19 @@ export default function EmailCenterPage() {
         {/* -------------------------------------------------- */}
         {/* RIGHT PANE: ACTIVE EMAIL THREAD & TRAIL            */}
         {/* -------------------------------------------------- */}
-        <div className={`flex-1 flex flex-col bg-gray-50/40 min-w-0 ${
+        <div className={`flex-1 flex flex-col bg-white min-w-0 ${
           !isMobileViewingThread ? 'hidden md:flex' : 'flex'
         }`}>
           {activeThread ? (
             <>
               {/* Thread Header Bar with Conversation Switcher */}
-              <div className="p-4 sm:p-5 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-2xs">
+              <div className="px-6 py-3.5 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
                 
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Mobile Back Button */}
                   <button
                     onClick={() => setIsMobileViewingThread(false)}
-                    className="md:hidden p-1.5 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
+                    className="md:hidden p-1.5 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 cursor-pointer"
                   >
                     <ArrowLeft size={18} />
                   </button>
@@ -877,7 +877,7 @@ export default function EmailCenterPage() {
                   <select
                     value={activeThread.id}
                     onChange={(e) => setSelectedThreadId(e.target.value)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-gray-300 bg-gray-50 hover:bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer max-w-[200px] sm:max-w-[280px] truncate"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-gray-50 hover:bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer max-w-[200px] sm:max-w-[280px] truncate"
                     title="Switch Conversation"
                   >
                     {threads.map(t => (
@@ -890,8 +890,8 @@ export default function EmailCenterPage() {
 
               </div>
 
-              {/* Thread Trail Timeline (Scrollable) */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+              {/* Thread Trail Timeline (Scrollable, Generous Space) */}
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
                 
                 {/* Timeline Start Notice */}
                 <div className="text-center">
@@ -908,7 +908,7 @@ export default function EmailCenterPage() {
                   return (
                     <div 
                       key={msg.id || index}
-                      className={`flex flex-col ${isInbound ? 'items-start' : 'items-end'} space-y-1.5`}
+                      className={`flex flex-col ${isInbound ? 'items-start' : 'items-end'} space-y-1.5 w-full`}
                     >
                       {/* Message Meta Info Header */}
                       <div className="flex items-center gap-2 text-xs text-gray-500 px-1">
@@ -925,11 +925,11 @@ export default function EmailCenterPage() {
                         </span>
                       </div>
 
-                      {/* Message Card */}
-                      <div className={`max-w-2xl rounded-2xl p-5 shadow-xs border transition ${
+                      {/* Message Card - Spacious & Clean */}
+                      <div className={`w-full max-w-3xl lg:max-w-4xl rounded-xl p-5 border transition ${
                         isInbound 
-                          ? 'bg-white border-gray-200 text-gray-800' 
-                          : 'bg-[#0B1730] text-white border-gray-800'
+                          ? 'bg-gray-50/80 border-gray-200 text-gray-800 shadow-2xs' 
+                          : 'bg-[#0B1730] text-white border-gray-800 shadow-xs'
                       }`}>
                         
                         {/* Tier Badge / Role for Outbound */}
@@ -978,13 +978,13 @@ export default function EmailCenterPage() {
               </div>
 
               {/* ==================================================== */}
-              {/* INLINE QUICK REPLY BOX WITH 3-TIER DOMAIN SELECTOR   */}
+              {/* INLINE QUICK REPLY BOX (FLUSH AT BOTTOM)             */}
               {/* ==================================================== */}
-              <div className="p-4 sm:p-5 bg-white border-t border-gray-200 shrink-0 shadow-lg">
+              <div className="px-6 py-4 bg-white border-t border-gray-200 shrink-0">
                 <form onSubmit={handleSendReply} className="space-y-3">
                   
                   {/* Reply Controls: Sender Identity, Recipient, and CC */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50/70 p-2.5 rounded-xl border border-gray-200">
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50/70 p-2.5 rounded-lg border border-gray-200">
                     <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
                       {/* FROM Dropdown */}
                       <div className="flex items-center gap-1.5 shrink-0">
