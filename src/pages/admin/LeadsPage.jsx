@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Search, Filter, Download, Mail, Trash2, Send } from 'lucide-react';
+import { Loader2, Search, Filter, Download, Mail, Trash2 } from 'lucide-react';
 import SendEmailModal from '../../components/admin/SendEmailModal';
 
 export default function LeadsPage() {
@@ -209,23 +209,14 @@ export default function LeadsPage() {
                           setSelectedLeadForEmail(lead);
                           setIsEmailModalOpen(true);
                         }}
-                        className="text-white bg-[#C95A08] hover:bg-orange-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
-                        title="Reply via Resend (Custom Domain)"
+                        className="text-white bg-[#C95A08] hover:bg-orange-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                        title="Reply with Baachko Mailers"
                       >
                         <Mail size={14} /> Reply
                       </button>
-                      <a 
-                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(lead.email)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-500 hover:text-blue-700 transition flex items-center p-1.5 bg-gray-100 hover:bg-blue-50 rounded-lg"
-                        title="Open in Gmail"
-                      >
-                        <Send size={14} />
-                      </a>
                       <button 
                         onClick={() => deleteLead(lead.id)}
-                        className="text-red-500 hover:text-red-700 transition flex items-center p-1.5 bg-gray-100 hover:bg-red-50 rounded-lg"
+                        className="text-red-500 hover:text-red-700 transition flex items-center p-1.5 bg-gray-100 hover:bg-red-50 rounded-lg cursor-pointer"
                         title="Delete Lead"
                       >
                         <Trash2 size={14} />
