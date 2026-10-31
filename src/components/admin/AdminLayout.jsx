@@ -1,7 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { LayoutDashboard, LogOut, Loader2, Package, Mail, Menu, X } from 'lucide-react';
+import { LayoutDashboard, LogOut, Loader2, Package, Mail, Menu, X, AlertCircle } from 'lucide-react';
+
+class AdminErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("Admin layout caught error:", error, errorInfo);
+  }
+  handleReset = () => {
+    try {
+      localStorage.removeItem('baachko_email_threads_v3');
+      localStorage.removeItem('baachko_email_threads_v2');
+      localStorage.removeItem('baachko_email_threads');
+    } catch (e) {}
+    window.location.reload();
+  };
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gray-50 text-center">
+          <div className="bg-white p-8 rounded-2xl shadow-lg border border-red-100 max-w-md w-full">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={24} />
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Section Failed to Load</h2>
+            <p className="text-xs text-gray-500 mb-6">
+              {this.state.error?.message || "An unexpected error occurred while loading this section."}
+            </p>
+            <button
+              onClick={this.handleReset}
+              className="px-4 py-2 bg-[#C95A08] hover:bg-orange-700 text-white font-bold rounded-lg text-sm transition cursor-pointer"
+            >
+              Reset Cache & Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function AdminLayout() {
   const [session, setSession] = useState(null);
@@ -160,7 +205,9 @@ export default function AdminLayout() {
 
         {/* Page Content */}
         <main className={`flex-1 ${location.pathname === '/adminpanel/emails' ? 'overflow-hidden p-0 bg-white flex flex-col' : 'overflow-auto p-4 sm:p-6 md:p-8 bg-gray-50'}`}>
-          <Outlet />
+          <AdminErrorBoundary>
+            <Outlet />
+          </AdminErrorBoundary>
         </main>
       </div>
     </div>

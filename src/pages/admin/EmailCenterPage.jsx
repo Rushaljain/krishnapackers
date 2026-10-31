@@ -191,7 +191,12 @@ export default function EmailCenterPage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(t => !t.id?.startsWith('thread-demo'));
+          return parsed
+            .filter(t => t && typeof t === 'object' && !t.id?.startsWith('thread-demo'))
+            .map(t => ({
+              ...t,
+              messages: Array.isArray(t.messages) ? t.messages : []
+            }));
         }
       }
     } catch (e) {}
@@ -236,13 +241,6 @@ export default function EmailCenterPage() {
     }, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  // Sync replyToEmail whenever activeThread changes
-  useEffect(() => {
-    if (activeThread?.email) {
-      setReplyToEmail(activeThread.email);
-    }
-  }, [activeThread?.id, activeThread?.email]);
 
   // Save threads to localStorage on changes & purge legacy dummy cache
   useEffect(() => {
@@ -352,8 +350,12 @@ export default function EmailCenterPage() {
       if (error || !data) return;
 
       setThreads(prev => {
-        const cleanPrev = prev.filter(t => !t.id?.startsWith('thread-demo'));
-        const existingEmails = new Set(cleanPrev.map(t => t.email.toLowerCase()));
+        const cleanPrev = (prev || []).filter(t => t && !t.id?.startsWith('thread-demo'));
+        const existingEmails = new Set(
+          cleanPrev
+            .filter(t => t && t.email)
+            .map(t => t.email.toLowerCase().trim())
+        );
         const newThreadsFromLeads = data
           .filter(lead => lead.email && !existingEmails.has(lead.email.toLowerCase()))
           .map(lead => ({
@@ -430,6 +432,13 @@ export default function EmailCenterPage() {
     }
   }, [activeThread?.id]);
 
+  // Sync replyToEmail whenever activeThread changes
+  useEffect(() => {
+    if (activeThread?.email) {
+      setReplyToEmail(activeThread.email);
+    }
+  }, [activeThread?.id, activeThread?.email]);
+
   // Handle Thread Status Change
   const updateThreadStatus = (newStatus) => {
     if (!activeThread) return;
@@ -450,9 +459,10 @@ export default function EmailCenterPage() {
     setReplyAlert(null);
 
     const chosenTier = getSenderTier(replyTierId);
-    const replySubject = `Re: ${activeThread.messages[activeThread.messages.length - 1]?.subject || 'Baachko Industrial Packaging'}`;
-    const targetEmail = (replyToEmail || activeThread.email).trim();
-    const isDifferentEmail = targetEmail.toLowerCase() !== activeThread.email.toLowerCase();
+    const lastMsg = activeThread.messages?.[activeThread.messages?.length - 1];
+    const replySubject = `Re: ${lastMsg?.subject || 'Baachko Industrial Packaging'}`;
+    const targetEmail = (replyToEmail || activeThread.email || '').trim();
+    const isDifferentEmail = targetEmail.toLowerCase() !== (activeThread.email || '').toLowerCase();
     const parsedCc = replyCc.trim() ? replyCc.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [];
 
     try {
@@ -764,8 +774,8 @@ export default function EmailCenterPage() {
             ) : (
               filteredThreads.map((thread) => {
                 const isSelected = activeThread?.id === thread.id;
-                const lastMsg = thread.messages[thread.messages.length - 1];
-                const msgCount = thread.messages.length;
+                const lastMsg = thread.messages?.[thread.messages?.length - 1];
+                const msgCount = thread.messages?.length || 0;
 
                 return (
                   <div
@@ -799,7 +809,7 @@ export default function EmailCenterPage() {
                         </span>
                         <div className="flex items-center gap-1.5 shrink-0 text-gray-400">
                           <span className="text-[11px] font-medium">
-                            {new Date(thread.lastUpdated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                            {new Date(thread.lastUpdated || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                           </span>
                           {msgCount > 1 && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-600">
@@ -850,7 +860,7 @@ export default function EmailCenterPage() {
 
                   <div>
                     <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                      {activeThread.messages[activeThread.messages.length - 1]?.subject || 'Direct Conversation'}
+                      {activeThread.messages?.[activeThread.messages?.length - 1]?.subject || 'Direct Conversation'}
                     </h2>
 
                     <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-0.5">
@@ -882,7 +892,7 @@ export default function EmailCenterPage() {
                   >
                     {threads.map(t => (
                       <option key={t.id} value={t.id}>
-                        {t.contactName}: {t.messages[t.messages.length - 1]?.subject || 'Direct Thread'}
+                        {t.contactName}: {t.messages?.[t.messages?.length - 1]?.subject || 'Direct Thread'}
                       </option>
                     ))}
                   </select>
@@ -896,12 +906,12 @@ export default function EmailCenterPage() {
                 {/* Timeline Start Notice */}
                 <div className="text-center">
                   <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-wider">
-                    Conversation Trail Started • {new Date(activeThread.messages[0]?.timestamp || activeThread.lastUpdated).toLocaleDateString()}
+                    Conversation Trail Started • {new Date(activeThread.messages?.[0]?.timestamp || activeThread.lastUpdated || Date.now()).toLocaleDateString()}
                   </span>
                 </div>
 
                 {/* Trail Messages */}
-                {activeThread.messages.map((msg, index) => {
+                {(activeThread.messages || []).map((msg, index) => {
                   const isInbound = msg.senderType === 'inbound';
                   const msgTier = getSenderTier(msg.tierId);
 
