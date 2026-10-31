@@ -130,142 +130,22 @@ Baachko Pvt. Ltd. (Krishna Packers)`
   }
 ];
 
-// Initial starter threads demonstrating vendor follow-ups and quote trails
-const INITIAL_STARTER_THREADS = [
-  {
-    id: 'thread-demo-1',
-    contactName: 'Sheersh Kumar Pandey',
-    company: 'Ananda Balaji Food Pvt Ltd',
-    email: 'sheersh.pandey@anandagroup.org',
-    phone: '07355390764',
-    targetSku: 'KP-MWS-001 (3 Ply) [25 Kg]',
-    category: 'quote',
-    status: 'Quoted',
-    lastUpdated: new Date(Date.now() - 3600000 * 4).toISOString(),
-    messages: [
-      {
-        id: 'msg-101',
-        senderType: 'inbound',
-        senderName: 'Sheersh Kumar Pandey',
-        senderEmail: 'sheersh.pandey@anandagroup.org',
-        recipientEmail: 'quotes@mail.baachko.com',
-        tier: 'Inbound Customer RFQ',
-        subject: 'Requirement for 25kg Multiwall Kraft Paper Sacks',
-        body: 'We require 25,000 units of 3-ply Kraft paper sacks for packaging food ingredients and corn flakes. Need high moisture resistance and food-grade inner PE lining. Please share quote and delivery schedule for our Kanpur plant.',
-        timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
-        status: 'Received'
-      },
-      {
-        id: 'msg-102',
-        senderType: 'outbound',
-        senderName: 'Baachko Quotations & Specs',
-        senderEmail: 'quotes@mail.baachko.com',
-        recipientEmail: 'sheersh.pandey@anandagroup.org',
-        tier: 'Transactional',
-        tierId: 'tier-2',
-        subject: 'Proforma Quotation: KP-MWS-001 (3 Ply + Food Grade PE Liner)',
-        body: `Dear Sheersh Kumar ji,
-
-Thank you for reaching out to Baachko Pvt. Ltd.
-
-We are pleased to provide our formal quotation for 25,000 bags of KP-MWS-001:
-- Construction: 3 Ply Virgin Kraft Paper + 30 Micron Food Grade PE Liner
-- Capacity: 25 Kg net filling weight
-- Printing: Up to 4 colors high-resolution Flexo printing
-- Rate: ₹32.50 per bag Ex-Navi Mumbai
-- Delivery Lead Time: 7 business days
-
-Complimentary trial samples are being dispatched today to your Kanpur QA lab for testing.`,
-        timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-        status: 'Delivered'
-      }
-    ]
-  },
-  {
-    id: 'thread-demo-2',
-    contactName: 'Rameshwar Vyas',
-    company: 'Supreme Polymers & Woven Fab',
-    email: 'procurement@supremepolymers.in',
-    phone: '+91 98201 44552',
-    targetSku: 'Virgin PP Granules (MFI 3.0)',
-    category: 'vendor',
-    status: 'Awaiting Vendor',
-    lastUpdated: new Date(Date.now() - 3600000 * 12).toISOString(),
-    messages: [
-      {
-        id: 'msg-201',
-        senderType: 'outbound',
-        senderName: 'Baachko Partner Operations',
-        senderEmail: 'updates@reach.baachko.com',
-        recipientEmail: 'procurement@supremepolymers.in',
-        tier: 'Outreach & Vendors',
-        tierId: 'tier-3',
-        subject: 'Inquiry: Supply of 20 MT Polypropylene Raffia Grade Granules',
-        body: `Dear Rameshwar ji,
-
-We require 20 Metric Tons of virgin Polypropylene (PP) Raffia grade granules for our Navi Mumbai extrusion line.
-
-Please provide your best CIF Navi Mumbai rate, payment terms, and technical COA for delivery within the next 10 days.
-
-Warm regards,
-Procurement Team
-Baachko Pvt. Ltd.`,
-        timestamp: new Date(Date.now() - 3600000 * 36).toISOString(),
-        status: 'Delivered'
-      },
-      {
-        id: 'msg-202',
-        senderType: 'inbound',
-        senderName: 'Rameshwar Vyas',
-        senderEmail: 'procurement@supremepolymers.in',
-        recipientEmail: 'updates@reach.baachko.com',
-        tier: 'Inbound Vendor Reply',
-        subject: 'Re: Supply of 20 MT Polypropylene Raffia Grade Granules',
-        body: 'Dear Team, We can supply 20 MT at ₹94.50/kg + GST, delivery within 4 days from Hazira plant. COA attached. Payment terms 30 days PDC.',
-        timestamp: new Date(Date.now() - 3600000 * 18).toISOString(),
-        status: 'Received'
-      },
-      {
-        id: 'msg-203',
-        senderType: 'outbound',
-        senderName: 'Baachko Partner Operations',
-        senderEmail: 'updates@reach.baachko.com',
-        recipientEmail: 'procurement@supremepolymers.in',
-        tier: 'Outreach & Vendors',
-        tierId: 'tier-3',
-        subject: 'Vendor Follow-up: Rate Negotiation for 20 MT Lot',
-        body: `Dear Rameshwar ji,
-
-Thank you for your prompt quote. Given our recurring monthly volume of 60+ MT across our product lines, we request you to consider a spot rate of ₹92.00/kg + GST for immediate PO issuance.
-
-Please confirm so our accounts team can release the advance token.
-
-Warm regards,
-Procurement Team
-Baachko Pvt. Ltd.`,
-        timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
-        status: 'Delivered'
-      }
-    ]
-  }
-];
-
 export default function EmailCenterPage() {
-  // Master Threads State
+  // Master Threads State (Genuine leads from Supabase / real sent mail, no dummy data)
   const [threads, setThreads] = useState(() => {
     try {
-      const saved = localStorage.getItem('baachko_email_threads_v2');
+      const saved = localStorage.getItem('baachko_email_threads_v3');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter(t => !t.id?.startsWith('thread-demo'));
+        }
       }
     } catch (e) {}
-    return INITIAL_STARTER_THREADS;
+    return [];
   });
 
-  const [selectedThreadId, setSelectedThreadId] = useState(() => {
-    return INITIAL_STARTER_THREADS[0].id;
-  });
+  const [selectedThreadId, setSelectedThreadId] = useState(null);
 
   // UI Navigation states
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'quotes' | 'vendors' | 'outreach'
@@ -295,10 +175,13 @@ export default function EmailCenterPage() {
     fetchAndMergeSupabaseLeads();
   }, []);
 
-  // Save threads to localStorage on changes
+  // Save threads to localStorage on changes & purge legacy dummy cache
   useEffect(() => {
     try {
-      localStorage.setItem('baachko_email_threads_v2', JSON.stringify(threads));
+      const cleanThreads = threads.filter(t => !t.id?.startsWith('thread-demo'));
+      localStorage.setItem('baachko_email_threads_v3', JSON.stringify(cleanThreads));
+      localStorage.removeItem('baachko_email_threads_v2');
+      localStorage.removeItem('baachko_email_threads');
     } catch (e) {}
   }, [threads]);
 
@@ -312,7 +195,8 @@ export default function EmailCenterPage() {
       if (error || !data) return;
 
       setThreads(prev => {
-        const existingEmails = new Set(prev.map(t => t.email.toLowerCase()));
+        const cleanPrev = prev.filter(t => !t.id?.startsWith('thread-demo'));
+        const existingEmails = new Set(cleanPrev.map(t => t.email.toLowerCase()));
         const newThreadsFromLeads = data
           .filter(lead => lead.email && !existingEmails.has(lead.email.toLowerCase()))
           .map(lead => ({
@@ -341,7 +225,11 @@ export default function EmailCenterPage() {
             ]
           }));
 
-        return [...newThreadsFromLeads, ...prev];
+        const merged = [...newThreadsFromLeads, ...cleanPrev];
+        if (merged.length > 0 && !selectedThreadId) {
+          setSelectedThreadId(merged[0].id);
+        }
+        return merged;
       });
     } catch (err) {
       console.warn("Could not sync supabase leads:", err);
@@ -370,9 +258,10 @@ export default function EmailCenterPage() {
     });
   }, [threads, activeTab, searchQuery]);
 
-  // Currently active thread
+  // Currently active thread (null if no conversations)
   const activeThread = useMemo(() => {
-    return threads.find(t => t.id === selectedThreadId) || filteredThreads[0] || threads[0];
+    if (threads.length === 0) return null;
+    return threads.find(t => t.id === selectedThreadId) || filteredThreads[0] || threads[0] || null;
   }, [threads, selectedThreadId, filteredThreads]);
 
   // Keep replyTierId aligned with active thread's category
@@ -675,8 +564,10 @@ export default function EmailCenterPage() {
             {filteredThreads.length === 0 ? (
               <div className="p-8 text-center text-gray-400">
                 <Inbox size={36} className="mx-auto mb-2 text-gray-300" />
-                <p className="text-sm font-medium">No matching conversations</p>
-                <p className="text-xs text-gray-400 mt-1">Try clearing search or click "Compose" to write an email.</p>
+                <p className="text-sm font-semibold text-gray-700">No conversations yet</p>
+                <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                  Inquiries from the website will appear here automatically, or click "Compose New Email" to send an email.
+                </p>
               </div>
             ) : (
               filteredThreads.map((thread) => {
