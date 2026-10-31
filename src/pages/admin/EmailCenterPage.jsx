@@ -714,44 +714,28 @@ export default function EmailCenterPage() {
                         <span className={`font-bold text-sm truncate ${isSelected ? 'text-amber-900' : 'text-gray-900'}`}>
                           {thread.contactName}
                         </span>
-                        <span className="text-[11px] text-gray-400 shrink-0 font-medium">
-                          {new Date(thread.lastUpdated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0 text-gray-400">
+                          <span className="text-[11px] font-medium">
+                            {new Date(thread.lastUpdated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                          </span>
+                          {msgCount > 1 && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-600">
+                              {msgCount}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="text-xs text-gray-500 font-medium truncate mb-1">
+                      <div className="text-xs text-gray-500 font-medium truncate mb-0.5">
                         {thread.company}
                       </div>
 
-                      <div className="text-xs text-gray-700 font-semibold truncate mb-1">
+                      <div className="text-xs text-gray-800 font-semibold truncate mb-0.5">
                         {lastMsg?.subject || 'Quotation & Inquiry'}
                       </div>
 
                       <div className="text-xs text-gray-400 line-clamp-1 leading-relaxed">
                         {lastMsg?.body || 'No message content yet.'}
-                      </div>
-
-                      {/* Badges / Status Row */}
-                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          thread.status === 'New' ? 'bg-blue-100 text-blue-800' :
-                          thread.status === 'Quoted' ? 'bg-emerald-100 text-emerald-800' :
-                          thread.status === 'Awaiting Vendor' ? 'bg-yellow-100 text-yellow-800' :
-                          thread.status === 'In Follow-up' ? 'bg-orange-100 text-orange-800' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {thread.status}
-                        </span>
-
-                        {thread.targetSku && (
-                          <span className="text-[10px] bg-slate-100 text-slate-700 font-mono px-1.5 py-0.5 rounded max-w-[130px] truncate" title={thread.targetSku}>
-                            {thread.targetSku}
-                          </span>
-                        )}
-
-                        <span className="text-[10px] font-semibold text-gray-400 ml-auto flex items-center gap-0.5">
-                          {msgCount} {msgCount === 1 ? 'msg' : 'msgs'}
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -770,7 +754,7 @@ export default function EmailCenterPage() {
           {activeThread ? (
             <>
               {/* Thread Header Bar */}
-              <div className="p-4 sm:p-5 bg-white border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0 shadow-2xs">
+              <div className="p-4 sm:p-5 bg-white border-b border-gray-200 flex items-center justify-between gap-3 shrink-0 shadow-2xs">
                 
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Mobile Back Button */}
@@ -782,11 +766,9 @@ export default function EmailCenterPage() {
                   </button>
 
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                        {activeThread.messages[activeThread.messages.length - 1]?.subject || 'Direct Conversation'}
-                      </h2>
-                    </div>
+                    <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                      {activeThread.messages[activeThread.messages.length - 1]?.subject || 'Direct Conversation'}
+                    </h2>
 
                     <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-0.5">
                       <span className="font-bold text-gray-800">{activeThread.contactName}</span>
@@ -802,23 +784,6 @@ export default function EmailCenterPage() {
                       )}
                     </div>
                   </div>
-                </div>
-
-                {/* Status Dropdown */}
-                <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                  <span className="text-xs text-gray-400 font-medium">Stage:</span>
-                  <select
-                    value={activeThread.status}
-                    onChange={(e) => updateThreadStatus(e.target.value)}
-                    className="text-xs font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
-                  >
-                    <option value="New">New</option>
-                    <option value="Quoted">Quoted</option>
-                    <option value="In Follow-up">In Follow-up</option>
-                    <option value="Awaiting Vendor">Awaiting Vendor</option>
-                    <option value="Negotiating">Negotiating</option>
-                    <option value="Closed">Closed</option>
-                  </select>
                 </div>
               </div>
 
@@ -908,66 +873,27 @@ export default function EmailCenterPage() {
               <div className="p-4 sm:p-5 bg-white border-t border-gray-200 shrink-0 shadow-lg">
                 <form onSubmit={handleSendReply} className="space-y-3">
                   
-                  {/* Reply Controls: Sender Dropdown & Template Dropdown */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  {/* Reply Controls: Sender Identity */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1">
+                      <Reply size={13} className="text-amber-700" /> From:
+                    </span>
                     
-                    {/* From Dropdown */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1">
-                        <Reply size={13} className="text-amber-700" /> From:
-                      </span>
-                      
-                      <div className="relative">
-                        <select
-                          value={replyTierId}
-                          onChange={(e) => setReplyTierId(e.target.value)}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-8"
-                        >
-                          {SENDER_TIERS.map(tier => (
-                            <option key={tier.id} value={tier.id}>
-                              {tier.email} ({tier.name})
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                      </div>
-                    </div>
-
-                    {/* Template Dropdown */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Template:</span>
-                      <div className="relative">
-                        <select
-                          onChange={(e) => {
-                            const tmpl = EMAIL_TEMPLATES.find(t => t.title === e.target.value);
-                            if (tmpl) handleApplyTemplateToReply(tmpl);
-                            e.target.value = '';
-                          }}
-                          defaultValue=""
-                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-700 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-8"
-                        >
-                          <option value="" disabled>Choose a template...</option>
-                          {EMAIL_TEMPLATES.map((tmpl, idx) => (
-                            <option key={idx} value={tmpl.title}>{tmpl.title}</option>
-                          ))}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                      </div>
+                    <div className="relative">
+                      <select
+                        value={replyTierId}
+                        onChange={(e) => setReplyTierId(e.target.value)}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-8"
+                      >
+                        {SENDER_TIERS.map(tier => (
+                          <option key={tier.id} value={tier.id}>
+                            {tier.email} ({tier.fromName})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                     </div>
                   </div>
-
-                  {/* Active Sender Notice */}
-                  {(() => {
-                    const currentTier = SENDER_TIERS.find(t => t.id === replyTierId) || SENDER_TIERS[0];
-                    return (
-                      <div className="text-[11px] text-gray-500 flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${currentTier.dotColor}`}></span>
-                        <span>
-                          Sending as <strong>{currentTier.fromName}</strong> &lt;{currentTier.email}&gt;
-                        </span>
-                      </div>
-                    );
-                  })()}
 
                   {/* Reply Alert */}
                   {replyAlert && (
