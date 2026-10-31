@@ -51,13 +51,19 @@ export default async function handler(req, res) {
         detectedKeys: foundResendKeys,
         deployment: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'local',
         env: process.env.VERCEL_ENV || 'unknown',
-        message: 'Resend API Key is not set in this deployment. Please verify that RESEND_API_KEY is configured for Production in Vercel and that a redeploy has been triggered.'
+        message: 'Resend API Key is not set in this deployment.'
       });
     }
 
     const resend = new Resend(apiKey);
 
-    // Fetch domains from Resend
+    // If query includes specific emailId, inspect it
+    if (req.query?.emailId) {
+      const emailRes = await resend.emails.get(req.query.emailId);
+      return res.status(200).json({ emailDetails: emailRes });
+    }
+
+    // Fetch domains from Resend with full details
     const domainsResult = await resend.domains.list();
 
     if (domainsResult.error) {
@@ -70,11 +76,18 @@ export default async function handler(req, res) {
     }
 
     const domains = domainsResult.data?.data || domainsResult.data || [];
+    let detailedDomain = null;
+    if (domains.length > 0) {
+      const firstDomain = domains[0];
+      const getRes = await resend.domains.get(firstDomain.id);
+      detailedDomain = getRes.data || getRes;
+    }
 
     return res.status(200).json({
       configured: true,
       validKey: true,
       domains: domains,
+      detailedDomain: detailedDomain,
       senderEmail: process.env.RESEND_FROM_EMAIL || 'sales@baachko.com',
       message: 'Resend is connected and ready.'
     });
