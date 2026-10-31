@@ -69,101 +69,31 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
   if (!isOpen || !lead) return null;
 
   const [to, setTo] = useState(lead.email || '');
+  const [cc, setCc] = useState('');
+  const [showCc, setShowCc] = useState(false);
   const [fromName, setFromName] = useState(SENDER_TIERS[0].fromName);
   const [fromEmail, setFromEmail] = useState(
     localStorage.getItem('resend_sender_email') || SENDER_TIERS[0].email
   );
   const [subject, setSubject] = useState(
-    `Quotation & Specifications for ${lead.target_product_sku || 'Packaging Sacks'} - Baachko`
+    `Quotation & Specifications: ${lead.target_product_sku || 'Industrial Packaging Sacks'} - Baachko`
   );
   const [message, setMessage] = useState('');
-  const [activeTemplate, setActiveTemplate] = useState('quote');
   const [isSending, setIsSending] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
   const [previewMode, setPreviewMode] = useState(false);
 
   useEffect(() => {
-    applyTemplate(activeTemplate);
-  }, [lead, activeTemplate]);
-
-  const applyTemplate = (type) => {
-    setActiveTemplate(type);
-    const name = lead.contact_name || 'Customer';
-    const company = lead.company_name ? ` at ${lead.company_name}` : '';
-    const sku = lead.target_product_sku || 'Industrial Packaging Sacks';
-    const qty = lead.estimated_qty ? ` for approximately ${lead.estimated_qty}` : '';
-
-    if (type === 'quote') {
-      setSubject(`Quotation & Specifications: ${sku} - Baachko`);
-      setMessage(
-`Dear ${name},
-
-Thank you for reaching out to Baachko Pvt. Ltd. regarding your packaging requirement for ${sku}${company}.
-
-We are pleased to provide our commercial quotation${qty}:
-
-Product Specifications:
-• Item: ${sku}
-• Build Quality: Heavy-duty, automated high-speed filling grade
-• Certification: ISO 9001:2015 Certified Manufacturing
-• Available Packaging: 25 Kg / 50 Kg / Custom specifications
-
-We can immediately dispatch physical product samples to your facility for tensile and drop testing.
-
-Please let us know your required delivery schedule or if you have specific custom printing requirements.
-
-Looking forward to working together.`
-      );
-    } else if (type === 'details') {
-      setSubject(`Specifications Clarification for ${sku} - Baachko`);
-      setMessage(
-`Dear ${name},
-
-Thank you for your inquiry with Baachko regarding ${sku}.
-
-To ensure we formulate the exact technical specifications and deliver the most competitive pricing, could you kindly confirm a few details?
-
-1. Target Dimensions / Bag Size: (e.g. Width x Height x Gusset)
-2. Material & Construction: (Multiwall Kraft Paper, HDPE Coated, or PP Woven)
-3. Bag Type: (Self-closing Valve Sack or Open Mouth)
-4. Inner Protection: (Standard or Inner PE Liner for moisture barrier)
-5. Custom Printing: (Plain or Flexo/DTG branded graphics)
-
-Once confirmed, we will share the complete technical datasheet and proforma quotation.
-
-Thank you for your time.`
-      );
-    } else if (type === 'sample') {
-      setSubject(`Sample Dispatch Confirmation: ${sku} - Baachko`);
-      setMessage(
-`Dear ${name},
-
-We are pleased to confirm that sample units of ${sku} have been prepared by our quality assurance team at our Navi Mumbai facility.
-
-Sample Package Details:
-• Product: ${sku}
-• Purpose: Laboratory and industrial filling trial
-• Manufacturing Facility: TTC Industrial Area, Khairane MIDC, Navi Mumbai
-
-The package is being dispatched via courier. We will share the tracking consignment number as soon as it is picked up.
-
-Please do not hesitate to reach out if you have any questions.`
-      );
-    } else if (type === 'custom') {
-      setSubject(`Inquiry Follow-up: ${sku} - Baachko`);
-      setMessage(
-`Dear ${name},
-
-Thank you for contacting Baachko Pvt. Ltd.
-
-We have reviewed your request regarding ${sku}${company}.
-
-[Enter custom response message here]
-
-Best regards,`
-      );
+    if (lead) {
+      setTo(lead.email || '');
+      setSubject(`Quotation & Specifications: ${lead.target_product_sku || 'Industrial Packaging Sacks'} - Baachko`);
+      setMessage('');
+      setCc('');
+      setShowCc(false);
+      setStatusMessage({ type: '', text: '' });
+      setPreviewMode(false);
     }
-  };
+  }, [lead]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -180,6 +110,7 @@ Best regards,`
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: to.trim(),
+          cc: cc.trim() || undefined,
           subject: subject.trim(),
           message: message.trim(),
           fromName: fromName.trim(),
@@ -330,17 +261,53 @@ Best regards,`
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-              Recipient Email (To)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Recipient Email (To) *
+              </label>
+              {!showCc && (
+                <button
+                  type="button"
+                  onClick={() => setShowCc(true)}
+                  className="text-xs font-semibold text-amber-700 hover:text-amber-800 cursor-pointer"
+                >
+                  + CC
+                </button>
+              )}
+            </div>
             <input 
               type="email" 
               value={to}
               onChange={(e) => setTo(e.target.value)}
               className="w-full text-sm px-3.5 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+              placeholder="recipient@example.com"
               required
             />
           </div>
+
+          {showCc && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  CC (Carbon Copy)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => { setShowCc(false); setCc(''); }}
+                  className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  Remove CC
+                </button>
+              </div>
+              <input 
+                type="text" 
+                value={cc}
+                onChange={(e) => setCc(e.target.value)}
+                className="w-full text-sm px-3.5 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                placeholder="cc1@example.com, cc2@example.com"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
@@ -351,6 +318,7 @@ Best regards,`
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="w-full text-sm font-semibold text-gray-900 px-3.5 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+              placeholder="Email subject line..."
               required
             />
           </div>
@@ -363,7 +331,7 @@ Best regards,`
               <button
                 type="button"
                 onClick={() => setPreviewMode(!previewMode)}
-                className="text-xs font-medium text-amber-700 hover:text-amber-800 flex items-center gap-1"
+                className="text-xs font-medium text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
               >
                 {previewMode ? <Edit3 size={13} /> : <Eye size={13} />}
                 {previewMode ? 'Switch to Edit' : 'Preview Branded Email'}
@@ -375,9 +343,13 @@ Best regards,`
                 <div className="border-b border-gray-200 pb-2 mb-2">
                   <span className="font-bold text-[#0B1730]">BAACHKO</span> — Industrial Packaging
                 </div>
-                {message.split('\n\n').map((para, i) => (
-                  <p key={i} className="leading-relaxed">{para}</p>
-                ))}
+                {message.trim() ? (
+                  message.split('\n\n').map((para, i) => (
+                    <p key={i} className="leading-relaxed">{para}</p>
+                  ))
+                ) : (
+                  <p className="text-gray-400 italic">No message body written yet.</p>
+                )}
                 <div className="pt-3 border-t border-gray-200 text-xs text-gray-500">
                   W-234, Khairane Road, TTC Industrial Area, Navi Mumbai - 400705
                 </div>
@@ -388,7 +360,7 @@ Best regards,`
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="w-full text-sm px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none font-sans leading-relaxed"
-                placeholder="Compose your email response..."
+                placeholder="Compose your email message here..."
                 required
               />
             )}
