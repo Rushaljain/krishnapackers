@@ -1,343 +1,1255 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, Send, CheckCircle2, AlertCircle, Loader2, Check, Clock } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Mail, Send, CheckCircle2, AlertCircle, Loader2, Check, Clock, 
+  Plus, Search, Filter, ChevronDown, User, Building, Paperclip, 
+  Reply, ArrowRight, X, Sparkles, Tag, ShieldCheck, CornerDownRight, 
+  RefreshCw, FileText, MoreVertical, Inbox, SendHorizonal, ArrowLeft
+} from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
-function generateBrandedHtml(content, subject, senderName = "Baachko Sales Team") {
-  const formattedBody = content
-    .split('\n\n')
-    .map(p => `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #374151; font-size: 15px;">${p.replace(/\n/g, '<br/>')}</p>`)
-    .join('');
+// ==========================================
+// 3-TIER DOMAIN SEPARATION ARCHITECTURE
+// ==========================================
+export const SENDER_TIERS = [
+  {
+    id: 'tier-2',
+    tierNumber: 2,
+    name: 'Tier 2: Transactional',
+    subdomain: 'mail.baachko.com',
+    email: 'quotes@mail.baachko.com',
+    fromName: 'Baachko Quotations & Specs',
+    role: 'Quotations, Technical Spec Sheets, Sample Confirmations',
+    badge: 'Transactional',
+    color: 'bg-amber-100 text-amber-900 border-amber-300',
+    dotColor: 'bg-amber-500',
+    description: 'High-speed delivery for customer RFQs & automatic receipts without risking apex domain reputation'
+  },
+  {
+    id: 'tier-1',
+    tierNumber: 1,
+    name: 'Tier 1: Corporate Apex',
+    subdomain: 'baachko.com',
+    email: 'sales@baachko.com',
+    fromName: 'Baachko Industrial Packaging',
+    role: 'Executive 1-on-1 Deals, Commercial Contracts & Director Sign-offs',
+    badge: 'Corporate Apex',
+    color: 'bg-purple-100 text-purple-900 border-purple-300',
+    dotColor: 'bg-purple-500',
+    description: 'Direct corporate identity with primary inbox authority for high-value negotiations'
+  },
+  {
+    id: 'tier-3',
+    tierNumber: 3,
+    name: 'Tier 3: Outreach & CRM',
+    subdomain: 'reach.baachko.com',
+    email: 'updates@reach.baachko.com',
+    fromName: 'Baachko Partner Operations',
+    role: 'Vendor Follow-ups, Supplier Pricing, Re-engagement Campaigns',
+    badge: 'Vendor & CRM',
+    color: 'bg-cyan-100 text-cyan-900 border-cyan-300',
+    dotColor: 'bg-cyan-500',
+    description: 'Isolated subdomain firewalling reputation for cold follow-ups & raw material supplier negotiation'
+  }
+];
 
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6; padding: 30px 15px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #e5e7eb;" cellspacing="0" cellpadding="0">
-          <tr>
-            <td style="background-color: #0B1730; padding: 28px 32px; text-align: left; border-bottom: 3px solid #C95A08;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td>
-                    <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: 0.5px;">BAACHKO</h1>
-                    <p style="margin: 4px 0 0 0; color: #C95A08; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Industrial Packaging Solutions • Est. 1974</p>
-                  </td>
-                  <td align="right">
-                    <span style="display: inline-block; background-color: rgba(255,255,255,0.12); color: #ffffff; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600;">ISO 9001:2015</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 36px 32px 28px 32px; background-color: #ffffff;">
-              ${formattedBody}
-              <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                <p style="margin: 0; color: #111827; font-weight: 700; font-size: 15px;">${senderName}</p>
-                <p style="margin: 2px 0 0 0; color: #6b7280; font-size: 13px;">Baachko Pvt. Ltd. (Krishna Packers)</p>
-                <p style="margin: 2px 0 0 0; color: #C95A08; font-size: 13px; font-weight: 500;">
-                  <a href="https://www.baachko.com" style="color: #C95A08; text-decoration: none;">www.baachko.com</a>
-                </p>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="background-color: #f9fafb; padding: 24px 32px; text-align: left; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; line-height: 1.5;">
-              <p style="margin: 0 0 8px 0; font-weight: 600; color: #374151;">Manufacturing Plant & Corporate Office:</p>
-              <p style="margin: 0 0 8px 0;">W-234, Khairane Road, TTC Industrial Area, Khairane MIDC, Navi Mumbai - 400705, Maharashtra, India</p>
-              <p style="margin: 0;">Phone: +91 93246 35279 / +91 73030 77339</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-  `.trim();
-}
+// ==========================================
+// PACKAGING EMAIL TEMPLATES
+// ==========================================
+export const EMAIL_TEMPLATES = [
+  {
+    title: 'Formal Price Quotation',
+    tierId: 'tier-2',
+    category: 'quote',
+    subject: 'Proforma Quotation - Baachko Industrial Packaging',
+    body: `Dear [Contact Name],
 
-export default function EmailCenterPage() {
-  const senderEmail = 'sales@baachko.com';
-  const senderName = 'Baachko Industrial Packaging';
+Thank you for your inquiry regarding our industrial packaging solutions.
 
-  // Composer state
-  const [to, setTo] = useState('');
-  const [subject, setSubject] = useState('Quotation & Technical Specifications - Baachko');
-  const [message, setMessage] = useState(
-`Dear Customer,
+Please find below our formal quotation based on your required specifications:
+- Target Product: [Product / SKU]
+- Estimated Quantity: [Quantity]
+- Material & Construction: Heavy-duty Kraft Paper / Woven Multiwall Sacks
+- Price Ex-Factory (Navi Mumbai): ₹[Rate] per unit + GST
+- Lead Time: 5 to 7 business days from PO confirmation
 
-Thank you for your interest in Baachko Industrial Packaging solutions.
+Kindly confirm your dispatch schedule so our production engineering team can initiate lot scheduling.
 
-We manufacture heavy-duty Multiwall Kraft Paper Sacks, Valve Bags, HDPE Coated Sacks, PP Woven Bags, and FIBC Jumbo Bulk Bags built to stringent ISO 9001:2015 quality standards.
+Warm regards,
+Sales Engineering Team
+Baachko Pvt. Ltd. (Krishna Packers)`
+  },
+  {
+    title: 'Vendor Material Follow-up',
+    tierId: 'tier-3',
+    category: 'vendor',
+    subject: 'Procurement Follow-up: Raw Material Supply & Spot Rates - Baachko',
+    body: `Dear Partner / Vendor,
 
-Please let us know your required dimensions, ply count, or target capacity (25 Kg / 50 Kg / Bulk) so we can issue an official proforma quotation and dispatch complimentary trial samples.
+Following up on our procurement requirement for raw material supply.
+
+Could you please confirm the current spot rate, batch test certificates (COA), and dispatch availability for delivery to our Khairane MIDC manufacturing unit in Navi Mumbai?
+
+Please share the proforma invoice or revised rate matrix at your earliest convenience so we can issue our Purchase Order.
 
 Best regards,
-Sales Engineering Team
-Baachko Pvt. Ltd. (Krishna Packers)
-W-234, Khairane Road, TTC Industrial Area, Navi Mumbai - 400705`
-  );
-  const [isSending, setIsSending] = useState(false);
-  const [sendResult, setSendResult] = useState({ type: '', text: '' });
+Procurement & Vendor Operations
+Baachko Pvt. Ltd. (Krishna Packers)`
+  },
+  {
+    title: 'Technical Specifications Sheet',
+    tierId: 'tier-2',
+    category: 'quote',
+    subject: 'Technical Specification Sheet - Baachko Industrial Bags',
+    body: `Dear [Contact Name],
 
-  // Sent history
-  const [sentHistory, setSentHistory] = useState([]);
+As requested, here are the technical specifications and testing standards for our industrial sacks:
+- Tensile & Bursting Strength: Compliant with ISO 9001:2015 & ASTM D828 standards
+- Moisture Resistance: PE-lined / HDPE laminated moisture barrier
+- Closure & Filling: Automated valve closure / Stitched open-mouth
+- Drop Test Endurance: 1.8-meter drop test verified for heavy powder containment
 
+We would be pleased to send physical sample bags to your facility for QA evaluation. Please confirm your delivery address.
+
+Warm regards,
+Technical Sales Team
+Baachko Pvt. Ltd.`
+  },
+  {
+    title: 'Trial Sample Feedback Follow-up',
+    tierId: 'tier-1',
+    category: 'outreach',
+    subject: 'Follow-up: Trial Sample Evaluation - Baachko Packaging',
+    body: `Dear [Contact Name],
+
+I am checking in to see if you have received the complimentary trial sample sacks dispatched to your facility last week.
+
+Did your packing line and warehouse team have an opportunity to test the automated filling, drop resistance, and stackability?
+
+I would love to arrange a brief call this week to review any adjustments needed to your bag dimensions or printing requirements.
+
+Warm regards,
+Commercial Accounts Director
+Baachko Pvt. Ltd. (Krishna Packers)`
+  }
+];
+
+// Initial starter threads demonstrating vendor follow-ups and quote trails
+const INITIAL_STARTER_THREADS = [
+  {
+    id: 'thread-demo-1',
+    contactName: 'Sheersh Kumar Pandey',
+    company: 'Ananda Balaji Food Pvt Ltd',
+    email: 'sheersh.pandey@anandagroup.org',
+    phone: '07355390764',
+    targetSku: 'KP-MWS-001 (3 Ply) [25 Kg]',
+    category: 'quote',
+    status: 'Quoted',
+    lastUpdated: new Date(Date.now() - 3600000 * 4).toISOString(),
+    messages: [
+      {
+        id: 'msg-101',
+        senderType: 'inbound',
+        senderName: 'Sheersh Kumar Pandey',
+        senderEmail: 'sheersh.pandey@anandagroup.org',
+        recipientEmail: 'quotes@mail.baachko.com',
+        tier: 'Inbound Customer RFQ',
+        subject: 'Requirement for 25kg Multiwall Kraft Paper Sacks',
+        body: 'We require 25,000 units of 3-ply Kraft paper sacks for packaging food ingredients and corn flakes. Need high moisture resistance and food-grade inner PE lining. Please share quote and delivery schedule for our Kanpur plant.',
+        timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
+        status: 'Received'
+      },
+      {
+        id: 'msg-102',
+        senderType: 'outbound',
+        senderName: 'Baachko Quotations & Specs',
+        senderEmail: 'quotes@mail.baachko.com',
+        recipientEmail: 'sheersh.pandey@anandagroup.org',
+        tier: 'Tier 2: Transactional',
+        tierId: 'tier-2',
+        subject: 'Proforma Quotation: KP-MWS-001 (3 Ply + Food Grade PE Liner)',
+        body: `Dear Sheersh Kumar ji,
+
+Thank you for reaching out to Baachko Pvt. Ltd.
+
+We are pleased to provide our formal quotation for 25,000 bags of KP-MWS-001:
+- Construction: 3 Ply Virgin Kraft Paper + 30 Micron Food Grade PE Liner
+- Capacity: 25 Kg net filling weight
+- Printing: Up to 4 colors high-resolution Flexo printing
+- Rate: ₹32.50 per bag Ex-Navi Mumbai
+- Delivery Lead Time: 7 business days
+
+Complimentary trial samples are being dispatched today to your Kanpur QA lab for testing.`,
+        timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
+        status: 'Delivered'
+      }
+    ]
+  },
+  {
+    id: 'thread-demo-2',
+    contactName: 'Rameshwar Vyas',
+    company: 'Supreme Polymers & Woven Fab',
+    email: 'procurement@supremepolymers.in',
+    phone: '+91 98201 44552',
+    targetSku: 'Virgin PP Granules (MFI 3.0)',
+    category: 'vendor',
+    status: 'Awaiting Vendor',
+    lastUpdated: new Date(Date.now() - 3600000 * 12).toISOString(),
+    messages: [
+      {
+        id: 'msg-201',
+        senderType: 'outbound',
+        senderName: 'Baachko Partner Operations',
+        senderEmail: 'updates@reach.baachko.com',
+        recipientEmail: 'procurement@supremepolymers.in',
+        tier: 'Tier 3: Outreach & CRM',
+        tierId: 'tier-3',
+        subject: 'Inquiry: Supply of 20 MT Polypropylene Raffia Grade Granules',
+        body: `Dear Rameshwar ji,
+
+We require 20 Metric Tons of virgin Polypropylene (PP) Raffia grade granules for our Navi Mumbai extrusion line.
+
+Please provide your best CIF Navi Mumbai rate, payment terms, and technical COA for delivery within the next 10 days.
+
+Warm regards,
+Procurement Team
+Baachko Pvt. Ltd.`,
+        timestamp: new Date(Date.now() - 3600000 * 36).toISOString(),
+        status: 'Delivered'
+      },
+      {
+        id: 'msg-202',
+        senderType: 'inbound',
+        senderName: 'Rameshwar Vyas',
+        senderEmail: 'procurement@supremepolymers.in',
+        recipientEmail: 'updates@reach.baachko.com',
+        tier: 'Inbound Vendor Reply',
+        subject: 'Re: Supply of 20 MT Polypropylene Raffia Grade Granules',
+        body: 'Dear Team, We can supply 20 MT at ₹94.50/kg + GST, delivery within 4 days from Hazira plant. COA attached. Payment terms 30 days PDC.',
+        timestamp: new Date(Date.now() - 3600000 * 18).toISOString(),
+        status: 'Received'
+      },
+      {
+        id: 'msg-203',
+        senderType: 'outbound',
+        senderName: 'Baachko Partner Operations',
+        senderEmail: 'updates@reach.baachko.com',
+        recipientEmail: 'procurement@supremepolymers.in',
+        tier: 'Tier 3: Outreach & CRM',
+        tierId: 'tier-3',
+        subject: 'Vendor Follow-up: Rate Negotiation for 20 MT Lot',
+        body: `Dear Rameshwar ji,
+
+Thank you for your prompt quote. Given our recurring monthly volume of 60+ MT across our product lines, we request you to consider a spot rate of ₹92.00/kg + GST for immediate PO issuance.
+
+Please confirm so our accounts team can release the advance token.
+
+Warm regards,
+Procurement Team
+Baachko Pvt. Ltd.`,
+        timestamp: new Date(Date.now() - 3600000 * 12).toISOString(),
+        status: 'Delivered'
+      }
+    ]
+  }
+];
+
+export default function EmailCenterPage() {
+  // Master Threads State
+  const [threads, setThreads] = useState(() => {
+    try {
+      const saved = localStorage.getItem('baachko_email_threads_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return INITIAL_STARTER_THREADS;
+  });
+
+  const [selectedThreadId, setSelectedThreadId] = useState(() => {
+    return INITIAL_STARTER_THREADS[0].id;
+  });
+
+  // UI Navigation states
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'quotes' | 'vendors' | 'outreach'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileViewingThread, setIsMobileViewingThread] = useState(false);
+
+  // Compose Modal State
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [composeTierId, setComposeTierId] = useState('tier-2');
+  const [composeTo, setComposeTo] = useState('');
+  const [composeContactName, setComposeContactName] = useState('');
+  const [composeCompany, setComposeCompany] = useState('');
+  const [composeCategory, setComposeCategory] = useState('quote');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+  const [isSendingCompose, setIsSendingCompose] = useState(false);
+  const [composeError, setComposeError] = useState(null);
+
+  // Inline Quick Reply State (for active thread)
+  const [replyTierId, setReplyTierId] = useState('tier-2');
+  const [replyBody, setReplyBody] = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
+  const [replyAlert, setReplyAlert] = useState(null);
+
+  // Sync with Supabase RFQ Leads on Mount
   useEffect(() => {
-    loadSentHistory();
+    fetchAndMergeSupabaseLeads();
   }, []);
 
-  const loadSentHistory = () => {
+  // Save threads to localStorage on changes
+  useEffect(() => {
     try {
-      const history = JSON.parse(localStorage.getItem('sent_emails_history') || '[]');
-      setSentHistory(history);
+      localStorage.setItem('baachko_email_threads_v2', JSON.stringify(threads));
     } catch (e) {}
+  }, [threads]);
+
+  const fetchAndMergeSupabaseLeads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('rfq_leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error || !data) return;
+
+      setThreads(prev => {
+        const existingEmails = new Set(prev.map(t => t.email.toLowerCase()));
+        const newThreadsFromLeads = data
+          .filter(lead => lead.email && !existingEmails.has(lead.email.toLowerCase()))
+          .map(lead => ({
+            id: `lead-${lead.id}`,
+            contactName: lead.contact_name || 'Website Inquiry',
+            company: lead.company_name || 'Direct Client',
+            email: lead.email,
+            phone: lead.phone || '',
+            targetSku: lead.target_product_sku || '',
+            category: 'quote',
+            status: lead.status || 'New',
+            lastUpdated: lead.created_at || new Date().toISOString(),
+            messages: [
+              {
+                id: `msg-lead-${lead.id}`,
+                senderType: 'inbound',
+                senderName: lead.contact_name || 'Customer',
+                senderEmail: lead.email,
+                recipientEmail: 'quotes@mail.baachko.com',
+                tier: 'Inbound Web RFQ',
+                subject: `Inquiry for ${lead.target_product_sku || 'Industrial Packaging'}`,
+                body: lead.message || `Customer submitted a quotation request on baachko.com for ${lead.target_product_sku || 'Packaging Sacks'}${lead.estimated_qty ? ` (Quantity: ${lead.estimated_qty})` : ''}.`,
+                timestamp: lead.created_at || new Date().toISOString(),
+                status: 'Received'
+              }
+            ]
+          }));
+
+        return [...newThreadsFromLeads, ...prev];
+      });
+    } catch (err) {
+      console.warn("Could not sync supabase leads:", err);
+    }
   };
 
-  const handleSendCustom = async (e) => {
-    e.preventDefault();
-    if (!to) {
-      setSendResult({ type: 'error', text: 'Recipient email is required.' });
-      return;
-    }
+  // Filtered Threads
+  const filteredThreads = useMemo(() => {
+    return threads.filter(thread => {
+      // Tab filter
+      if (activeTab === 'quotes' && thread.category !== 'quote') return false;
+      if (activeTab === 'vendors' && thread.category !== 'vendor') return false;
+      if (activeTab === 'outreach' && thread.category !== 'outreach') return false;
 
-    setIsSending(true);
-    setSendResult({ type: '', text: '' });
+      // Search filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesContact = thread.contactName?.toLowerCase().includes(q);
+        const matchesCompany = thread.company?.toLowerCase().includes(q);
+        const matchesEmail = thread.email?.toLowerCase().includes(q);
+        const matchesSku = thread.targetSku?.toLowerCase().includes(q);
+        const matchesMsg = thread.messages?.some(m => m.body?.toLowerCase().includes(q) || m.subject?.toLowerCase().includes(q));
+        return matchesContact || matchesCompany || matchesEmail || matchesSku || matchesMsg;
+      }
+      return true;
+    });
+  }, [threads, activeTab, searchQuery]);
+
+  // Currently active thread
+  const activeThread = useMemo(() => {
+    return threads.find(t => t.id === selectedThreadId) || filteredThreads[0] || threads[0];
+  }, [threads, selectedThreadId, filteredThreads]);
+
+  // Keep replyTierId aligned with active thread's category
+  useEffect(() => {
+    if (activeThread) {
+      if (activeThread.category === 'vendor') setReplyTierId('tier-3');
+      else if (activeThread.category === 'quote') setReplyTierId('tier-2');
+      else setReplyTierId('tier-1');
+    }
+  }, [activeThread?.id]);
+
+  // Handle Thread Status Change
+  const updateThreadStatus = (newStatus) => {
+    if (!activeThread) return;
+    setThreads(prev => prev.map(t => {
+      if (t.id === activeThread.id) {
+        return { ...t, status: newStatus };
+      }
+      return t;
+    }));
+  };
+
+  // Send an Inline Reply within Active Thread
+  const handleSendReply = async (e) => {
+    e.preventDefault();
+    if (!activeThread || !replyBody.trim()) return;
+
+    setIsSendingReply(true);
+    setReplyAlert(null);
+
+    const chosenTier = SENDER_TIERS.find(t => t.id === replyTierId) || SENDER_TIERS[0];
+    const replySubject = `Re: ${activeThread.messages[activeThread.messages.length - 1]?.subject || 'Baachko Industrial Packaging'}`;
 
     try {
-      let emailId = null;
-
-      // Send via serverless endpoint (uses RESEND_API_KEY from Vercel)
       const res = await fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: to.trim(),
-          subject: subject.trim(),
-          message: message.trim(),
-          fromName: senderName,
-          fromEmail: senderEmail
+          to: activeThread.email,
+          subject: replySubject,
+          message: replyBody.trim(),
+          fromName: chosenTier.fromName,
+          fromEmail: chosenTier.email,
+          replyTo: 'karan.apcotraders@gmail.com'
         })
       });
 
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          throw new Error(data.error || 'Failed to dispatch email.');
-        }
-        emailId = data.id;
-      } else {
-        throw new Error('Server returned an invalid response. Please verify Vercel deployment.');
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to dispatch email via Resend.');
       }
 
-      setSendResult({
+      // Append new message to the active thread's trail
+      const newMessage = {
+        id: `msg-${Date.now()}`,
+        senderType: 'outbound',
+        senderName: chosenTier.fromName,
+        senderEmail: chosenTier.email,
+        recipientEmail: activeThread.email,
+        tier: chosenTier.name,
+        tierId: chosenTier.id,
+        subject: replySubject,
+        body: replyBody.trim(),
+        timestamp: new Date().toISOString(),
+        status: 'Delivered'
+      };
+
+      setThreads(prev => prev.map(t => {
+        if (t.id === activeThread.id) {
+          return {
+            ...t,
+            status: t.status === 'New' ? 'Quoted' : 'In Follow-up',
+            lastUpdated: new Date().toISOString(),
+            messages: [...t.messages, newMessage]
+          };
+        }
+        return t;
+      }));
+
+      setReplyBody('');
+      setReplyAlert({
         type: 'success',
-        text: `Email successfully dispatched to ${to} (Resend ID: ${emailId || 'sent'})`
+        text: `Sent via ${chosenTier.email} (Delivery ID: ${data.id || 'ok'})`
       });
-
-      const updatedHistory = [
-        {
-          id: emailId,
-          to: to,
-          contactName: to.split('@')[0],
-          company: 'Direct Dispatch',
-          subject: subject,
-          sentAt: new Date().toISOString(),
-          from: `${senderName} <${senderEmail}>`
-        },
-        ...sentHistory
-      ].slice(0, 50);
-
-      setSentHistory(updatedHistory);
-      localStorage.setItem('sent_emails_history', JSON.stringify(updatedHistory));
-      setTo('');
+      setTimeout(() => setReplyAlert(null), 4000);
 
     } catch (err) {
-      setSendResult({
+      setReplyAlert({
         type: 'error',
         text: err.message || 'Error occurred while sending email.'
       });
     } finally {
-      setIsSending(false);
+      setIsSendingReply(false);
+    }
+  };
+
+  // Open Compose Pop-up Modal with clean defaults
+  const handleOpenCompose = (prefill = {}) => {
+    setComposeTierId(prefill.tierId || 'tier-2');
+    setComposeTo(prefill.to || '');
+    setComposeContactName(prefill.contactName || '');
+    setComposeCompany(prefill.company || '');
+    setComposeCategory(prefill.category || 'quote');
+    setComposeSubject(prefill.subject || 'Quotation & Technical Specifications - Baachko');
+    setComposeBody(prefill.body || '');
+    setComposeError(null);
+    setIsComposeOpen(true);
+  };
+
+  // Apply a template into compose modal
+  const handleApplyTemplateToCompose = (template) => {
+    setComposeTierId(template.tierId);
+    setComposeCategory(template.category);
+    setComposeSubject(template.subject);
+    setComposeBody(template.body.replace('[Contact Name]', composeContactName || 'Customer'));
+  };
+
+  // Apply template into active thread reply box
+  const handleApplyTemplateToReply = (template) => {
+    setReplyTierId(template.tierId);
+    setReplyBody(template.body.replace('[Contact Name]', activeThread?.contactName || 'Customer'));
+  };
+
+  // Submit Compose Modal (New Mail ID / New Conversation)
+  const handleSubmitCompose = async (e) => {
+    e.preventDefault();
+    if (!composeTo.trim()) {
+      setComposeError('Recipient email address is required.');
+      return;
+    }
+    if (!composeSubject.trim() || !composeBody.trim()) {
+      setComposeError('Please provide both subject and message body.');
+      return;
+    }
+
+    setIsSendingCompose(true);
+    setComposeError(null);
+
+    const chosenTier = SENDER_TIERS.find(t => t.id === composeTierId) || SENDER_TIERS[0];
+
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: composeTo.trim(),
+          subject: composeSubject.trim(),
+          message: composeBody.trim(),
+          fromName: chosenTier.fromName,
+          fromEmail: chosenTier.email,
+          replyTo: 'karan.apcotraders@gmail.com'
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to dispatch email via Resend.');
+      }
+
+      // Check if thread already exists for this email
+      const existingThread = threads.find(t => t.email.toLowerCase() === composeTo.trim().toLowerCase());
+
+      const newMessage = {
+        id: `msg-${Date.now()}`,
+        senderType: 'outbound',
+        senderName: chosenTier.fromName,
+        senderEmail: chosenTier.email,
+        recipientEmail: composeTo.trim(),
+        tier: chosenTier.name,
+        tierId: chosenTier.id,
+        subject: composeSubject.trim(),
+        body: composeBody.trim(),
+        timestamp: new Date().toISOString(),
+        status: 'Delivered'
+      };
+
+      if (existingThread) {
+        // Append to existing
+        setThreads(prev => prev.map(t => {
+          if (t.id === existingThread.id) {
+            return {
+              ...t,
+              lastUpdated: new Date().toISOString(),
+              messages: [...t.messages, newMessage]
+            };
+          }
+          return t;
+        }));
+        setSelectedThreadId(existingThread.id);
+      } else {
+        // Create new thread
+        const newThreadId = `thread-${Date.now()}`;
+        const newThread = {
+          id: newThreadId,
+          contactName: composeContactName.trim() || composeTo.split('@')[0],
+          company: composeCompany.trim() || (composeCategory === 'vendor' ? 'Supplier / Vendor' : 'Direct Inquiry'),
+          email: composeTo.trim(),
+          phone: '',
+          targetSku: '',
+          category: composeCategory,
+          status: composeCategory === 'vendor' ? 'In Follow-up' : 'Quoted',
+          lastUpdated: new Date().toISOString(),
+          messages: [newMessage]
+        };
+
+        setThreads(prev => [newThread, ...prev]);
+        setSelectedThreadId(newThreadId);
+      }
+
+      setIsComposeOpen(false);
+      setIsMobileViewingThread(true);
+
+    } catch (err) {
+      setComposeError(err.message || 'Error occurred while sending email.');
+    } finally {
+      setIsSendingCompose(false);
     }
   };
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-xs border border-gray-200">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-extrabold text-[#0B1730]">Mailing Center</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Resend Active
+      {/* ==================================================== */}
+      {/* TOP ARCHITECTURE BAR & CONTROLS                     */}
+      {/* ==================================================== */}
+      <div className="bg-white rounded-2xl p-4 shadow-2xs border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+        
+        {/* Left: Branding & Tier Guide Pill */}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => handleOpenCompose()}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-sm rounded-xl shadow-sm transition hover:shadow-md cursor-pointer"
+          >
+            <Plus size={18} /> Compose New Email
+          </button>
+
+          <div className="hidden lg:flex items-center gap-2 text-xs bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+            <span className="font-bold text-slate-700 flex items-center gap-1">
+              <ShieldCheck size={14} className="text-amber-700" /> 3-Tier Domain Isolation:
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+              Tier 1: Corporate
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+              Tier 2: Transactional
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-cyan-100 text-cyan-800 border border-cyan-200">
+              Tier 3: Outreach & CRM
             </span>
           </div>
-          <p className="text-sm text-gray-500 mt-1">
-            Dispatch quotations, technical specifications, and official responses directly from <span className="font-semibold text-gray-700">{senderEmail}</span>.
-          </p>
-        </div>
-        <div className="text-xs text-gray-600 bg-gray-50 border border-gray-200 px-3.5 py-2 rounded-xl flex items-center gap-2">
-          <Mail size={15} className="text-amber-700" />
-          <span>Sending as: <strong>{senderName} &lt;{senderEmail}&gt;</strong></span>
-        </div>
-      </div>
-
-      {/* Direct Custom Email Dispatcher */}
-      <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-200">
-        <div className="flex items-center gap-2.5 mb-6">
-          <div className="p-2 bg-orange-50 text-orange-700 rounded-xl">
-            <Send size={20} />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">Direct Email Composer</h2>
-            <p className="text-xs text-gray-500">Send an instant quotation or official response from <span className="font-semibold text-gray-700">{senderEmail}</span>.</p>
-          </div>
         </div>
 
-        {sendResult.text && (
-          <div className={`mb-6 p-4 rounded-xl text-sm flex items-start gap-3 ${
-            sendResult.type === 'success' 
-              ? 'bg-green-50 text-green-800 border border-green-200' 
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}>
-            {sendResult.type === 'success' ? (
-              <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            ) : (
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-            )}
-            <span className="font-medium">{sendResult.text}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSendCustom} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                Recipient Email *
-              </label>
-              <input 
-                type="email" 
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                placeholder="client@company.com"
-                className="w-full text-sm px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                Subject *
-              </label>
-              <input 
-                type="text" 
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full text-sm font-semibold px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-              Email Content
-            </label>
-            <textarea 
-              rows={7}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full text-sm px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none font-sans leading-relaxed"
-              required
+        {/* Right: Search Input & Sync */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative flex-1 md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input 
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search conversations, emails, SKUs..."
+              className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition"
             />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
 
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isSending}
-              className="px-6 py-2.5 bg-[#C95A08] hover:bg-orange-700 text-white rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2 disabled:opacity-60 cursor-pointer"
-            >
-              {isSending ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" /> Dispatching...
-                </>
-              ) : (
-                <>
-                  <Send size={16} /> Send via Resend
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+          <button
+            onClick={() => fetchAndMergeSupabaseLeads()}
+            title="Refresh Leads from Website"
+            className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+          >
+            <RefreshCw size={17} />
+          </button>
+        </div>
       </div>
 
-      {/* Sent Emails History Table */}
-      <div className="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Clock size={16} className="text-gray-500" />
-            <h3 className="font-bold text-sm text-gray-800">Recent Admin Sent Emails</h3>
+      {/* ==================================================== */}
+      {/* MAIN TWO-PANE GMAIL-STYLE INTERFACE                 */}
+      {/* ==================================================== */}
+      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col md:flex-row min-h-0">
+        
+        {/* -------------------------------------------------- */}
+        {/* LEFT PANE: GMAIL-STYLE MAIL LIST                   */}
+        {/* -------------------------------------------------- */}
+        <div className={`w-full md:w-96 lg:w-[410px] border-r border-gray-200 flex flex-col bg-white shrink-0 ${
+          isMobileViewingThread ? 'hidden md:flex' : 'flex'
+        }`}>
+          
+          {/* Category Tabs */}
+          <div className="p-3 border-b border-gray-100 flex items-center justify-between gap-1 overflow-x-auto text-xs font-semibold text-gray-600 bg-gray-50/60">
+            {[
+              { id: 'all', label: 'All Mails', count: threads.length },
+              { id: 'quotes', label: 'Quotes / RFQs', count: threads.filter(t => t.category === 'quote').length },
+              { id: 'vendors', label: 'Vendor Follow-ups', count: threads.filter(t => t.category === 'vendor').length },
+              { id: 'outreach', label: 'Outreach', count: threads.filter(t => t.category === 'outreach').length },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-2.5 py-1.5 rounded-lg transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === tab.id 
+                    ? 'bg-amber-700 text-white font-bold shadow-2xs' 
+                    : 'hover:bg-gray-200/70 text-gray-600'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  activeTab === tab.id ? 'bg-amber-900/40 text-white' : 'bg-gray-200 text-gray-700'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
           </div>
-          <span className="text-xs text-gray-500">
-            {sentHistory.length} recorded dispatches
-          </span>
+
+          {/* Email Conversation Threads List */}
+          <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+            {filteredThreads.length === 0 ? (
+              <div className="p-8 text-center text-gray-400">
+                <Inbox size={36} className="mx-auto mb-2 text-gray-300" />
+                <p className="text-sm font-medium">No matching conversations</p>
+                <p className="text-xs text-gray-400 mt-1">Try clearing search or click "Compose" to write an email.</p>
+              </div>
+            ) : (
+              filteredThreads.map((thread) => {
+                const isSelected = activeThread?.id === thread.id;
+                const lastMsg = thread.messages[thread.messages.length - 1];
+                const msgCount = thread.messages.length;
+
+                return (
+                  <div
+                    key={thread.id}
+                    onClick={() => {
+                      setSelectedThreadId(thread.id);
+                      setIsMobileViewingThread(true);
+                    }}
+                    className={`p-4 transition cursor-pointer relative group flex items-start gap-3 ${
+                      isSelected 
+                        ? 'bg-amber-50/70 border-l-4 border-amber-700' 
+                        : 'hover:bg-gray-50/90'
+                    }`}
+                  >
+                    {/* Avatar Initials */}
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs ${
+                      thread.category === 'vendor'
+                        ? 'bg-cyan-100 text-cyan-800'
+                        : thread.category === 'outreach'
+                        ? 'bg-purple-100 text-purple-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {thread.contactName?.slice(0, 2).toUpperCase() || 'BK'}
+                    </div>
+
+                    {/* Thread Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className={`font-bold text-sm truncate ${isSelected ? 'text-amber-900' : 'text-gray-900'}`}>
+                          {thread.contactName}
+                        </span>
+                        <span className="text-[11px] text-gray-400 shrink-0 font-medium">
+                          {new Date(thread.lastUpdated).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-gray-500 font-medium truncate mb-1">
+                        {thread.company}
+                      </div>
+
+                      <div className="text-xs text-gray-700 font-semibold truncate mb-1">
+                        {lastMsg?.subject || 'Quotation & Inquiry'}
+                      </div>
+
+                      <div className="text-xs text-gray-400 line-clamp-1 leading-relaxed">
+                        {lastMsg?.body || 'No message content yet.'}
+                      </div>
+
+                      {/* Badges / Status Row */}
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                          thread.status === 'New' ? 'bg-blue-100 text-blue-800' :
+                          thread.status === 'Quoted' ? 'bg-emerald-100 text-emerald-800' :
+                          thread.status === 'Awaiting Vendor' ? 'bg-yellow-100 text-yellow-800' :
+                          thread.status === 'In Follow-up' ? 'bg-orange-100 text-orange-800' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {thread.status}
+                        </span>
+
+                        {thread.targetSku && (
+                          <span className="text-[10px] bg-slate-100 text-slate-700 font-mono px-1.5 py-0.5 rounded max-w-[130px] truncate" title={thread.targetSku}>
+                            {thread.targetSku}
+                          </span>
+                        )}
+
+                        <span className="text-[10px] font-semibold text-gray-400 ml-auto flex items-center gap-0.5">
+                          {msgCount} {msgCount === 1 ? 'msg' : 'msgs'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
 
-        {sentHistory.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-              <thead className="bg-slate-50 text-gray-500 font-semibold uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="px-6 py-3 text-left">Date & Time</th>
-                  <th className="px-6 py-3 text-left">Recipient</th>
-                  <th className="px-6 py-3 text-left">Subject</th>
-                  <th className="px-6 py-3 text-left">Sender</th>
-                  <th className="px-6 py-3 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {sentHistory.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50 transition">
-                    <td className="px-6 py-3 whitespace-nowrap text-gray-500">
-                      {new Date(item.sentAt).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-3">
-                      <span className="font-semibold text-gray-900 block">{item.contactName || item.to}</span>
-                      <span className="text-xs text-gray-500">{item.to}</span>
-                    </td>
-                    <td className="px-6 py-3 text-gray-800 max-w-xs truncate" title={item.subject}>
-                      {item.subject}
-                    </td>
-                    <td className="px-6 py-3 text-xs text-gray-600 font-mono">
-                      {item.from}
-                    </td>
-                    <td className="px-6 py-3 whitespace-nowrap">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 flex items-center gap-1 w-fit">
-                        <Check size={12} /> Dispatched
+        {/* -------------------------------------------------- */}
+        {/* RIGHT PANE: ACTIVE EMAIL THREAD & TRAIL            */}
+        {/* -------------------------------------------------- */}
+        <div className={`flex-1 flex flex-col bg-gray-50/40 min-w-0 ${
+          !isMobileViewingThread ? 'hidden md:flex' : 'flex'
+        }`}>
+          {activeThread ? (
+            <>
+              {/* Thread Header Bar */}
+              <div className="p-4 sm:p-5 bg-white border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0 shadow-2xs">
+                
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Mobile Back Button */}
+                  <button
+                    onClick={() => setIsMobileViewingThread(false)}
+                    className="md:hidden p-1.5 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                        {activeThread.messages[activeThread.messages.length - 1]?.subject || 'Direct Conversation'}
+                      </h2>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-0.5">
+                      <span className="font-bold text-gray-800">{activeThread.contactName}</span>
+                      <span>•</span>
+                      <span className="font-medium text-gray-600">{activeThread.company}</span>
+                      <span>•</span>
+                      <span className="font-mono text-gray-600">{activeThread.email}</span>
+                      {activeThread.phone && (
+                        <>
+                          <span>•</span>
+                          <span className="text-gray-600">{activeThread.phone}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Dropdown */}
+                <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                  <span className="text-xs text-gray-400 font-medium">Stage:</span>
+                  <select
+                    value={activeThread.status}
+                    onChange={(e) => updateThreadStatus(e.target.value)}
+                    className="text-xs font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
+                  >
+                    <option value="New">New</option>
+                    <option value="Quoted">Quoted</option>
+                    <option value="In Follow-up">In Follow-up</option>
+                    <option value="Awaiting Vendor">Awaiting Vendor</option>
+                    <option value="Negotiating">Negotiating</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Thread Trail Timeline (Scrollable) */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                
+                {/* Timeline Start Notice */}
+                <div className="text-center">
+                  <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-wider">
+                    Conversation Trail Started • {new Date(activeThread.messages[0]?.timestamp || activeThread.lastUpdated).toLocaleDateString()}
+                  </span>
+                </div>
+
+                {/* Trail Messages */}
+                {activeThread.messages.map((msg, index) => {
+                  const isInbound = msg.senderType === 'inbound';
+                  const msgTier = SENDER_TIERS.find(t => t.id === msg.tierId);
+
+                  return (
+                    <div 
+                      key={msg.id || index}
+                      className={`flex flex-col ${isInbound ? 'items-start' : 'items-end'} space-y-1.5`}
+                    >
+                      {/* Message Meta Info Header */}
+                      <div className="flex items-center gap-2 text-xs text-gray-500 px-1">
+                        <span className="font-bold text-gray-800">
+                          {isInbound ? msg.senderName : msg.senderName || 'Baachko Team'}
+                        </span>
+                        <span>•</span>
+                        <span className="font-mono text-gray-400 text-[11px]">
+                          {msg.senderEmail}
+                        </span>
+                        <span>•</span>
+                        <span className="text-gray-400 text-[11px]">
+                          {new Date(msg.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                        </span>
+                      </div>
+
+                      {/* Message Card */}
+                      <div className={`max-w-2xl rounded-2xl p-5 shadow-xs border transition ${
+                        isInbound 
+                          ? 'bg-white border-gray-200 text-gray-800' 
+                          : 'bg-[#0B1730] text-white border-gray-800'
+                      }`}>
+                        
+                        {/* Tier Badge / Role for Outbound */}
+                        {!isInbound && (
+                          <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-700/70 text-xs">
+                            <span className="inline-flex items-center gap-1.5 font-semibold text-amber-400">
+                              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                              {msg.tier || 'Dispatched via Resend'}
+                            </span>
+                            <span className="text-[11px] text-gray-400 font-mono">
+                              From: {msg.senderEmail}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Subject */}
+                        <div className={`font-bold text-sm mb-2 ${isInbound ? 'text-gray-900' : 'text-amber-200'}`}>
+                          {msg.subject}
+                        </div>
+
+                        {/* Body formatted */}
+                        <div className={`text-sm whitespace-pre-wrap leading-relaxed ${
+                          isInbound ? 'text-gray-700' : 'text-gray-200'
+                        }`}>
+                          {msg.body}
+                        </div>
+
+                        {/* Footer status */}
+                        <div className="mt-3 pt-2.5 border-t border-gray-100/10 flex items-center justify-between text-[11px] text-gray-400">
+                          <span>To: {msg.recipientEmail}</span>
+                          <span className="flex items-center gap-1 font-semibold text-emerald-400">
+                            <Check size={12} /> {msg.status || 'Delivered'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* ==================================================== */}
+              {/* INLINE QUICK REPLY BOX WITH 3-TIER DOMAIN SELECTOR   */}
+              {/* ==================================================== */}
+              <div className="p-4 sm:p-5 bg-white border-t border-gray-200 shrink-0 shadow-lg">
+                <form onSubmit={handleSendReply} className="space-y-3">
+                  
+                  {/* Reply Controls: 3-Tier Selector & Quick Templates */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    
+                    {/* The 3-Tier Domain Selector Dropdown */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1">
+                        <Reply size={13} className="text-amber-700" /> Send From:
                       </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-8 text-center text-sm text-gray-500">
-            No emails have been sent from this admin panel yet. Select a lead in the Leads tab or compose a message above to send your first email.
-          </div>
-        )}
+                      
+                      <div className="relative">
+                        <select
+                          value={replyTierId}
+                          onChange={(e) => setReplyTierId(e.target.value)}
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-8"
+                        >
+                          {SENDER_TIERS.map(tier => (
+                            <option key={tier.id} value={tier.id}>
+                              {tier.name} — {tier.email}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-amber-800 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* Quick Template Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 sm:pb-0">
+                      <span className="text-[11px] text-gray-400 font-semibold whitespace-nowrap">Templates:</span>
+                      {EMAIL_TEMPLATES.map((tmpl, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleApplyTemplateToReply(tmpl)}
+                          className="text-[11px] font-medium px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition whitespace-nowrap cursor-pointer"
+                        >
+                          {tmpl.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Active Sender Subdomain Notice */}
+                  {(() => {
+                    const currentTier = SENDER_TIERS.find(t => t.id === replyTierId) || SENDER_TIERS[0];
+                    return (
+                      <div className="text-[11px] text-gray-500 flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${currentTier.dotColor}`}></span>
+                        <span>
+                          Sending as <strong>{currentTier.fromName}</strong> &lt;{currentTier.email}&gt;
+                        </span>
+                        <span className="hidden sm:inline text-gray-400">
+                          • {currentTier.description}
+                        </span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Reply Alert */}
+                  {replyAlert && (
+                    <div className={`p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                      replyAlert.type === 'success' 
+                        ? 'bg-green-50 text-green-800 border border-green-200' 
+                        : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}>
+                      {replyAlert.type === 'success' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                      <span>{replyAlert.text}</span>
+                    </div>
+                  )}
+
+                  {/* Message Input & Send Button */}
+                  <div className="relative">
+                    <textarea 
+                      rows={3}
+                      value={replyBody}
+                      onChange={(e) => setReplyBody(e.target.value)}
+                      placeholder={`Type your reply or vendor follow-up to ${activeThread.contactName}... (Maintains chronological trail)`}
+                      className="w-full text-xs sm:text-sm p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none leading-relaxed font-sans"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] text-gray-400">
+                      Replies automatically append to this contact's audit trail.
+                    </span>
+
+                    <button
+                      type="submit"
+                      disabled={isSendingReply || !replyBody.trim()}
+                      className="px-5 py-2 bg-[#C95A08] hover:bg-orange-700 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition flex items-center gap-2 cursor-pointer"
+                    >
+                      {isSendingReply ? (
+                        <>
+                          <Loader2 size={15} className="animate-spin" /> Dispatching...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={15} /> Send Follow-up
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400">
+              <Mail size={48} className="text-gray-300 mb-3" />
+              <h3 className="font-bold text-gray-700 text-base">Select a conversation</h3>
+              <p className="text-xs text-gray-400 max-w-sm mt-1">
+                Choose an existing thread from the left or click "Compose New Email" to send an inquiry or vendor follow-up.
+              </p>
+            </div>
+          )}
+        </div>
+
       </div>
+
+      {/* ==================================================== */}
+      {/* POP-UP MODAL: COMPOSE NEW EMAIL (NEW MAIL ID)        */}
+      {/* ==================================================== */}
+      {isComposeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-200 flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="bg-[#0B1730] px-6 py-4 flex justify-between items-center text-white">
+              <div className="flex items-center gap-2.5">
+                <SendHorizonal size={18} className="text-amber-500" />
+                <h3 className="font-bold text-base">Compose New Message</h3>
+              </div>
+              <button 
+                onClick={() => setIsComposeOpen(false)}
+                className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Form Body */}
+            <form onSubmit={handleSubmitCompose} className="p-6 overflow-y-auto space-y-4">
+              
+              {composeError && (
+                <div className="p-3 bg-red-50 text-red-800 border border-red-200 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle size={15} className="shrink-0" />
+                  <span>{composeError}</span>
+                </div>
+              )}
+
+              {/* 3-Tier Sender Architecture Dropdown */}
+              <div className="bg-amber-50/70 border border-amber-200 p-3 rounded-xl space-y-1.5">
+                <label className="block text-xs font-bold text-amber-900 uppercase tracking-wider">
+                  The 3-Tier Domain Architecture (Sender Identity) *
+                </label>
+                <div className="relative">
+                  <select
+                    value={composeTierId}
+                    onChange={(e) => setComposeTierId(e.target.value)}
+                    className="w-full text-xs sm:text-sm font-bold px-3 py-2 rounded-lg border border-amber-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 outline-none pr-8 cursor-pointer"
+                  >
+                    {SENDER_TIERS.map(tier => (
+                      <option key={tier.id} value={tier.id}>
+                        {tier.name} — {tier.email} ({tier.badge})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-800 pointer-events-none" />
+                </div>
+                <p className="text-[11px] text-amber-800/80">
+                  {SENDER_TIERS.find(t => t.id === composeTierId)?.description}
+                </p>
+              </div>
+
+              {/* Recipient Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Recipient Email *
+                  </label>
+                  <input 
+                    type="email"
+                    value={composeTo}
+                    onChange={(e) => setComposeTo(e.target.value)}
+                    placeholder="client@company.com or vendor@supplier.com"
+                    className="w-full text-xs sm:text-sm px-3.5 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none font-mono"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Contact Name
+                  </label>
+                  <input 
+                    type="text"
+                    value={composeContactName}
+                    onChange={(e) => setComposeContactName(e.target.value)}
+                    placeholder="e.g. Rameshwar Vyas"
+                    className="w-full text-xs sm:text-sm px-3.5 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Company / Organization
+                  </label>
+                  <input 
+                    type="text"
+                    value={composeCompany}
+                    onChange={(e) => setComposeCompany(e.target.value)}
+                    placeholder="e.g. Supreme Polymers & Fab"
+                    className="w-full text-xs sm:text-sm px-3.5 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Trail Category
+                  </label>
+                  <select
+                    value={composeCategory}
+                    onChange={(e) => setComposeCategory(e.target.value)}
+                    className="w-full text-xs sm:text-sm font-semibold px-3.5 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none bg-white cursor-pointer"
+                  >
+                    <option value="quote">Customer Quote / RFQ</option>
+                    <option value="vendor">Vendor Follow-up / Supplier</option>
+                    <option value="outreach">Direct Outreach / Commercial</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Subject *
+                </label>
+                <input 
+                  type="text"
+                  value={composeSubject}
+                  onChange={(e) => setComposeSubject(e.target.value)}
+                  placeholder="Quotation & Technical Specifications - Baachko"
+                  className="w-full text-xs sm:text-sm font-semibold px-3.5 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                  required
+                />
+              </div>
+
+              {/* Quick Template Bar */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Message Body *
+                  </label>
+                  <div className="flex items-center gap-1 text-[11px] text-gray-400">
+                    <Sparkles size={12} className="text-amber-600" />
+                    <span>Insert Template:</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2">
+                  {EMAIL_TEMPLATES.map((tmpl, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleApplyTemplateToCompose(tmpl)}
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition whitespace-nowrap cursor-pointer"
+                    >
+                      {tmpl.title}
+                    </button>
+                  ))}
+                </div>
+
+                <textarea 
+                  rows={6}
+                  value={composeBody}
+                  onChange={(e) => setComposeBody(e.target.value)}
+                  placeholder="Type your formal message, specifications, or inquiry..."
+                  className="w-full text-xs sm:text-sm p-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none font-sans leading-relaxed"
+                  required
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => setIsComposeOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSendingCompose}
+                  className="px-6 py-2.5 bg-[#C95A08] hover:bg-orange-700 disabled:opacity-60 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-2 cursor-pointer"
+                >
+                  {isSendingCompose ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Dispatching...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} /> Send via Resend
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
