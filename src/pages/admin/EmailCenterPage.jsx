@@ -53,6 +53,25 @@ export const SENDER_TIERS = [
   }
 ];
 
+// Strict Whitelist of Authorized Inbound & Outbound Mailboxes
+export const ALLOWED_MAILBOXES = [
+  'sales@baachko.com',
+  'karan@baachko.com',
+  'enquiry@baachko.com',
+  'quotes@baachko.com'
+];
+
+export function isAllowedInboundRecipient(toField) {
+  if (!toField) return false;
+  const list = Array.isArray(toField) ? toField : [toField];
+  return list.some(raw => {
+    if (!raw || typeof raw !== 'string') return false;
+    const match = raw.match(/<([^>]+)>/)?.[1] || raw;
+    const clean = match.replace(/["']/g, '').toLowerCase().trim();
+    return ALLOWED_MAILBOXES.includes(clean);
+  });
+}
+
 // Clean email body to remove Gmail/Outlook/Apple quote blocks and previous thread history
 export function cleanEmailBody(bodyText, htmlContent) {
   let text = '';
@@ -192,7 +211,16 @@ export default function EmailCenterPage() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           return parsed
-            .filter(t => t && typeof t === 'object' && !t.id?.startsWith('thread-demo'))
+            .filter(t => {
+              if (!t || typeof t !== 'object') return false;
+              if (t.id?.startsWith('thread-demo')) return false;
+              // If it's an inbound thread, ensure recipient was one of the 4 allowed mailboxes
+              const firstRecipient = t.messages?.[0]?.recipientEmail?.toLowerCase()?.trim();
+              if (firstRecipient && firstRecipient.endsWith('@baachko.com')) {
+                return ALLOWED_MAILBOXES.includes(firstRecipient);
+              }
+              return true;
+            })
             .map(t => ({
               ...t,
               messages: Array.isArray(t.messages) ? t.messages : []
@@ -272,15 +300,25 @@ export default function EmailCenterPage() {
       const emails = data.emails || [];
       if (!emails.length) return;
 
+      // Filter only authorized departmental mailboxes
+      const validEmails = emails.filter(item => isAllowedInboundRecipient(item.to));
+      if (!validEmails.length) return;
+
       setThreads(prev => {
         let updatedThreads = prev.filter(t => !t.id?.startsWith('thread-demo')).map(t => ({ ...t, messages: [...(t.messages || [])] }));
 
-        for (const item of emails) {
+        for (const item of validEmails) {
           const msgId = `msg-${item.id}`;
           const sender = typeof item.from === 'string' ? item.from : 'Customer';
           const senderEmail = (sender.match(/<([^>]+)>/)?.[1] || sender).trim();
           const senderName = sender.split('<')[0].replace(/"/g, '').trim() || senderEmail.split('@')[0];
-          const recipient = Array.isArray(item.to) ? item.to[0] : (item.to || 'sales@baachko.com');
+          
+          const rawRecipients = Array.isArray(item.to) ? item.to : [item.to || 'sales@baachko.com'];
+          const recipient = rawRecipients
+            .map(r => (typeof r === 'string' ? (r.match(/<([^>]+)>/)?.[1] || r) : '').toLowerCase().trim())
+            .find(r => ALLOWED_MAILBOXES.includes(r)) || 'sales@baachko.com';
+
+          const matchedTier = SENDER_TIERS.find(t => t.email === recipient) || SENDER_TIERS[0];
 
           // Clean Gmail/Outlook quoted text history so only fresh reply is shown
           const cleanBody = item.cleanBody || cleanEmailBody(item.text, item.html) || 'Incoming email received via baachko.com MX server.';
@@ -292,7 +330,7 @@ export default function EmailCenterPage() {
             senderEmail: senderEmail,
             recipientEmail: recipient,
             cc: item.cc && (Array.isArray(item.cc) ? item.cc.length > 0 : Boolean(item.cc)) ? item.cc : undefined,
-            tier: recipient.includes('quotes') ? 'Quotations' : (recipient.includes('reach') ? 'Vendors' : 'Corporate'),
+            tier: matchedTier.name,
             subject: item.subject || 'Incoming Mail',
             body: cleanBody,
             timestamp: item.created_at || new Date().toISOString(),
@@ -1197,36 +1235,6 @@ export default function EmailCenterPage() {
                     placeholder="e.g. Rameshwar Vyas"
                     className="w-full text-xs sm:text-sm px-3.5 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Company / Organization
-                  </label>
-                  <input 
-                    type="text"
-                    value={composeCompany}
-                    onChange={(e) => setComposeCompany(e.target.value)}
-                    placeholder="e.g. Supreme Polymers & Fab"
-                    className="w-full text-xs sm:text-sm px-3.5 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={composeCategory}
-                    onChange={(e) => setComposeCategory(e.target.value)}
-                    className="w-full text-xs sm:text-sm font-semibold px-3.5 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none bg-white cursor-pointer"
-                  >
-                    <option value="quote">Customer Quote / RFQ</option>
-                    <option value="vendor">Vendor Follow-up / Supplier</option>
-                    <option value="outreach">Direct Outreach / Commercial</option>
-                  </select>
                 </div>
               </div>
 
