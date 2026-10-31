@@ -50,7 +50,30 @@ export default function RFQForm({ productSku, productName }) {
       
       setIsSuccess(true);
 
-      // Automated client confirmation email via Resend (non-blocking)
+      // 1. Send Instant Lead Notification to Admin (karan.apcotraders@gmail.com)
+      try {
+        fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: 'karan.apcotraders@gmail.com',
+            subject: `🚨 New Lead: ${formData.company_name || formData.contact_name} - ${formData.target_product_sku || 'Inquiry'}`,
+            message: `A new bulk quotation inquiry was submitted on baachko.com:\n\n` +
+              `• Company: ${formData.company_name || 'N/A'}\n` +
+              `• Contact Name: ${formData.contact_name}\n` +
+              `• Email: ${formData.email}\n` +
+              `• Phone: ${formData.phone || 'N/A'}\n` +
+              `• Target SKU: ${formData.target_product_sku || 'N/A'}\n` +
+              `• Estimated Quantity: ${formData.estimated_qty || 'N/A'}\n` +
+              `• Message: ${formData.message || 'No additional message.'}\n\n` +
+              `View and reply to this lead directly in your admin portal at https://www.baachko.com/adminpanel/leads`,
+            fromName: 'Baachko Lead Alerts',
+            fromEmail: 'sales@baachko.com'
+          })
+        }).catch(() => {});
+      } catch (err) {}
+
+      // 2. Automated client confirmation email via Resend (non-blocking)
       try {
         fetch('/api/send-email', {
           method: 'POST',
@@ -59,7 +82,8 @@ export default function RFQForm({ productSku, productName }) {
             to: formData.email,
             subject: `Inquiry Confirmation - Baachko Packaging (${formData.target_product_sku || 'Custom Packaging'})`,
             message: `Dear ${formData.contact_name},\n\nThank you for requesting a quotation from Baachko Pvt. Ltd. (Krishna Packers).\n\nWe have received your requirement for ${formData.target_product_sku || 'Industrial Packaging'}${formData.estimated_qty ? ` (Quantity: ${formData.estimated_qty})` : ''}.\n\nOur sales engineering team is reviewing your requirements and will connect with you within 24 hours with complete technical specifications and pricing.\n\nWarm regards,\nSales Engineering Team\nBaachko Pvt. Ltd.`,
-            fromName: 'Baachko Sales'
+            fromName: 'Baachko Sales',
+            fromEmail: 'sales@baachko.com'
           })
         }).catch(() => {});
       } catch (err) {}
