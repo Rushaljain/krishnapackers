@@ -201,52 +201,64 @@ export default function EmailCenterPage() {
       if (!emails.length) return;
 
       setThreads(prev => {
-        const cleanPrev = prev.filter(t => !t.id?.startsWith('thread-demo'));
-        const existingIds = new Set(cleanPrev.map(t => t.id));
-        const newInboundThreads = [];
+        let updatedThreads = prev.filter(t => !t.id?.startsWith('thread-demo')).map(t => ({ ...t, messages: [...(t.messages || [])] }));
 
         for (const item of emails) {
-          const threadId = `inbound-${item.id}`;
-          if (existingIds.has(threadId)) continue;
-
+          const msgId = `msg-${item.id}`;
           const sender = typeof item.from === 'string' ? item.from : 'Customer';
-          const senderEmail = sender.match(/<([^>]+)>/)?.[1] || sender;
+          const senderEmail = (sender.match(/<([^>]+)>/)?.[1] || sender).trim();
           const senderName = sender.split('<')[0].replace(/"/g, '').trim() || senderEmail.split('@')[0];
           const recipient = Array.isArray(item.to) ? item.to[0] : (item.to || 'sales@baachko.com');
+          const cleanBody = item.text || (item.html ? item.html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : 'Incoming email received via baachko.com MX server.');
 
-          newInboundThreads.push({
-            id: threadId,
-            contactName: senderName,
-            company: senderEmail.includes('@') ? senderEmail.split('@')[1] : 'Direct Partner',
-            email: senderEmail,
-            phone: '',
-            targetSku: '',
-            category: recipient.includes('reach') ? 'vendor' : 'quote',
-            status: 'Received',
-            lastUpdated: item.created_at || new Date().toISOString(),
-            messages: [
-              {
-                id: `msg-${item.id}`,
-                senderType: 'inbound',
-                senderName: senderName,
-                senderEmail: senderEmail,
-                recipientEmail: recipient,
-                tier: recipient.includes('mail.') ? 'Tier 2 (Transactional)' : (recipient.includes('reach.') ? 'Tier 3 (Vendors)' : 'Tier 1 (Corporate)'),
-                subject: item.subject || 'Incoming Mail',
-                body: item.text || item.snippet || 'Incoming email received via baachko.com MX server.',
-                timestamp: item.created_at || new Date().toISOString(),
-                status: 'Received'
-              }
-            ]
-          });
+          const newMsg = {
+            id: msgId,
+            senderType: 'inbound',
+            senderName: senderName,
+            senderEmail: senderEmail,
+            recipientEmail: recipient,
+            tier: recipient.includes('mail.') ? 'Tier 2 (Transactional)' : (recipient.includes('reach.') ? 'Tier 3 (Vendors)' : 'Tier 1 (Corporate)'),
+            subject: item.subject || 'Incoming Mail',
+            body: cleanBody,
+            timestamp: item.created_at || new Date().toISOString(),
+            status: 'Received'
+          };
+
+          // Find if we already have a conversation thread with this sender email
+          const existingIndex = updatedThreads.findIndex(t => t.email?.toLowerCase().trim() === senderEmail.toLowerCase().trim());
+
+          if (existingIndex !== -1) {
+            const currentThread = updatedThreads[existingIndex];
+            const hasMsg = currentThread.messages.some(m => m.id === msgId);
+            if (!hasMsg) {
+              updatedThreads[existingIndex] = {
+                ...currentThread,
+                status: 'Reply Received',
+                lastUpdated: item.created_at || new Date().toISOString(),
+                messages: [...currentThread.messages, newMsg]
+              };
+            }
+          } else {
+            // Create a brand new thread for this contact
+            updatedThreads.unshift({
+              id: `inbound-${item.id}`,
+              contactName: senderName,
+              company: senderEmail.includes('@') ? senderEmail.split('@')[1] : 'Direct Partner',
+              email: senderEmail,
+              phone: '',
+              targetSku: '',
+              category: recipient.includes('reach') ? 'vendor' : 'quote',
+              status: 'Received',
+              lastUpdated: item.created_at || new Date().toISOString(),
+              messages: [newMsg]
+            });
+          }
         }
 
-        if (newInboundThreads.length === 0) return prev;
-        const merged = [...newInboundThreads, ...cleanPrev];
-        if (merged.length > 0 && !selectedThreadId) {
-          setSelectedThreadId(merged[0].id);
+        if (updatedThreads.length > 0 && !selectedThreadId) {
+          setSelectedThreadId(updatedThreads[0].id);
         }
-        return merged;
+        return updatedThreads;
       });
     } catch (err) {
       console.warn("Could not sync inbound emails:", err);

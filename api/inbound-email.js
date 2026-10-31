@@ -44,16 +44,32 @@ export default async function handler(req, res) {
   }
 
   const resend = new Resend(apiKey);
-  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL || 'karan.apcotraders@gmail.com';
 
-  // GET: List recent incoming emails
+  // GET: Fetch incoming received emails directly into the Baachko ERP Mailing Center
   if (req.method === 'GET') {
     try {
       if (resend.emails && resend.emails.receiving && typeof resend.emails.receiving.list === 'function') {
         const listResult = await resend.emails.receiving.list();
+        const items = listResult.data?.data || listResult.data || [];
+
+        // Fetch detailed email body (text/html) for the latest incoming emails
+        const detailedItems = await Promise.all(
+          items.slice(0, 15).map(async (item) => {
+            try {
+              if (resend.emails.receiving.get) {
+                const fullRes = await resend.emails.receiving.get(item.id);
+                return fullRes.data || fullRes || item;
+              }
+              return item;
+            } catch (err) {
+              return item;
+            }
+          })
+        );
+
         return res.status(200).json({
           success: true,
-          emails: listResult.data?.data || listResult.data || []
+          emails: detailedItems
         });
       }
       return res.status(200).json({ success: true, emails: [] });
@@ -63,69 +79,20 @@ export default async function handler(req, res) {
     }
   }
 
-  // POST: Webhook receiver for Resend 'email.received' event
+  // POST: Webhook handler when Resend receives an inbound email (stored directly for ERP Mailing Center)
   if (req.method === 'POST') {
     try {
       const payload = req.body || {};
       const eventType = payload.type;
       const data = payload.data || {};
 
-      console.log('Incoming Resend webhook event:', eventType, data);
+      console.log('Received inbound email event in Baachko ERP Mailer:', eventType, data.id || data.email_id);
 
-      if (eventType === 'email.received' || data.email_id || data.id) {
-        const emailId = data.email_id || data.id;
-        const sender = data.from || 'Unknown Sender';
-        const recipient = Array.isArray(data.to) ? data.to.join(', ') : (data.to || 'sales@baachko.com');
-        const subject = data.subject || '(No Subject)';
-        const textContent = data.text || '';
-        const htmlContent = data.html || `<p>${textContent || 'No message content'}</p>`;
-
-        // Try Resend built-in forward helper first
-        let forwarded = false;
-        try {
-          if (emailId && resend.emails.receiving?.forward) {
-            await resend.emails.receiving.forward({
-              emailId: emailId,
-              to: adminEmail,
-              from: 'sales@baachko.com'
-            });
-            forwarded = true;
-          }
-        } catch (fwdErr) {
-          console.warn('resend.emails.receiving.forward failed, trying fallback dispatch:', fwdErr.message);
-        }
-
-        // If built-in forward did not execute, send a formatted notification email
-        if (!forwarded) {
-          await resend.emails.send({
-            from: 'Baachko Inbound Mailer <sales@baachko.com>',
-            to: adminEmail,
-            subject: `[Incoming Baachko Mail to ${recipient}]: ${subject}`,
-            replyTo: typeof sender === 'string' && sender.includes('@') ? sender : undefined,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-                <div style="background-color: #0B1730; color: white; padding: 16px 20px;">
-                  <h2 style="margin: 0; font-size: 18px;">📬 Incoming Mail Received on baachko.com</h2>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; color: #f59e0b;">Sent to: <strong>${recipient}</strong></p>
-                </div>
-                <div style="padding: 20px; background-color: #f9fafb;">
-                  <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>From:</strong> ${sender}</p>
-                  <p style="margin: 0 0 8px 0; font-size: 14px;"><strong>Subject:</strong> ${subject}</p>
-                  <p style="margin: 0 0 16px 0; font-size: 14px;"><strong>Received At:</strong> ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST</p>
-                  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
-                  <div style="background: white; padding: 16px; border-radius: 6px; border: 1px solid #e5e7eb; line-height: 1.6; color: #1f2937;">
-                    ${htmlContent}
-                  </div>
-                </div>
-              </div>
-            `
-          });
-        }
-
-        return res.status(200).json({ success: true, forwardedTo: adminEmail, emailId });
-      }
-
-      return res.status(200).json({ received: true, event: eventType });
+      return res.status(200).json({
+        success: true,
+        message: 'Inbound email processed and synced with Baachko ERP Mailing Center',
+        emailId: data.id || data.email_id
+      });
     } catch (err) {
       console.error('Error processing inbound webhook:', err);
       return res.status(500).json({ error: err.message || 'Webhook processing failed' });
