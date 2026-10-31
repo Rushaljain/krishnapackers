@@ -1235,34 +1235,11 @@ export default function EmailCenterPage() {
                 />
               </div>
 
-              {/* Message Body with Template Dropdown */}
+              {/* Message Body */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Message Body *
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 font-medium">Template:</span>
-                    <div className="relative">
-                      <select
-                        onChange={(e) => {
-                          const tmpl = EMAIL_TEMPLATES.find(t => t.title === e.target.value);
-                          if (tmpl) handleApplyTemplateToCompose(tmpl);
-                          e.target.value = '';
-                        }}
-                        defaultValue=""
-                        className="text-xs font-medium px-2.5 py-1 rounded-lg border border-gray-300 bg-white text-gray-700 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-7"
-                      >
-                        <option value="" disabled>Choose a template...</option>
-                        {EMAIL_TEMPLATES.map((tmpl, idx) => (
-                          <option key={idx} value={tmpl.title}>{tmpl.title}</option>
-                        ))}
-                      </select>
-                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                  Message Body *
+                </label>
                 <textarea 
                   rows={6}
                   value={composeBody}
