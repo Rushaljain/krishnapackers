@@ -774,7 +774,7 @@ export default function EmailCenterPage() {
                       <select
                         value={replyTierId}
                         onChange={(e) => setReplyTierId(e.target.value)}
-                        className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-8"
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer appearance-none"
                       >
                         {SENDER_TIERS.map(tier => (
                           <option key={tier.id} value={tier.id}>
@@ -782,7 +782,6 @@ export default function EmailCenterPage() {
                           </option>
                         ))}
                       </select>
-                      <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                     </div>
                   </div>
 
