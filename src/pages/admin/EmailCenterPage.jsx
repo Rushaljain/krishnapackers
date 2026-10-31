@@ -53,6 +53,43 @@ export const SENDER_TIERS = [
   }
 ];
 
+// Clean email body to remove Gmail/Outlook/Apple quote blocks and previous thread history
+export function cleanEmailBody(bodyText, htmlContent) {
+  let text = '';
+  if (htmlContent && typeof htmlContent === 'string') {
+    let cleanHtml = htmlContent
+      .replace(/<div[^>]*class=["'][^"']*gmail_quote[^"']*["'][\s\S]*$/i, '')
+      .replace(/<div[^>]*class=["'][^"']*gmail_attr[^"']*["'][\s\S]*$/i, '')
+      .replace(/<blockquote[\s\S]*$/i, '')
+      .replace(/<div[^>]*id=["']divRplyFwdMsg["'][\s\S]*$/i, '')
+      .replace(/<div[^>]*id=["']appendonsend["'][\s\S]*$/i, '');
+    text = cleanHtml
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'");
+  }
+  if (!text.trim() && bodyText && typeof bodyText === 'string') text = bodyText;
+  if (!text) return '';
+  const lines = text.split('\n');
+  const fresh = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^On\s+.*wrote:?\s*$/i.test(trimmed)) break;
+    if (/^-{2,}\s*Original Message\s*-{2,}/i.test(trimmed)) break;
+    if (/^From:\s+.*@.*/i.test(trimmed)) break;
+    if (/^>\s*/.test(trimmed)) continue;
+    fresh.push(line);
+  }
+  return fresh.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 export const getSenderTier = (id) => {
   if (!id) return SENDER_TIERS[0];
   const found = SENDER_TIERS.find(t => 
@@ -172,6 +209,7 @@ export default function EmailCenterPage() {
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const [composeTierId, setComposeTierId] = useState('sales');
   const [composeTo, setComposeTo] = useState('');
+  const [composeCc, setComposeCc] = useState('');
   const [composeContactName, setComposeContactName] = useState('');
   const [composeCompany, setComposeCompany] = useState('');
   const [composeCategory, setComposeCategory] = useState('quote');
@@ -182,6 +220,9 @@ export default function EmailCenterPage() {
 
   // Inline Quick Reply State (for active thread)
   const [replyTierId, setReplyTierId] = useState('sales');
+  const [replyToEmail, setReplyToEmail] = useState('');
+  const [replyCc, setReplyCc] = useState('');
+  const [showCcInput, setShowCcInput] = useState(false);
   const [replyBody, setReplyBody] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [replyAlert, setReplyAlert] = useState(null);
@@ -195,6 +236,13 @@ export default function EmailCenterPage() {
     }, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // Sync replyToEmail whenever activeThread changes
+  useEffect(() => {
+    if (activeThread?.email) {
+      setReplyToEmail(activeThread.email);
+    }
+  }, [activeThread?.id, activeThread?.email]);
 
   // Save threads to localStorage on changes & purge legacy dummy cache
   useEffect(() => {
@@ -237,15 +285,7 @@ export default function EmailCenterPage() {
           const recipient = Array.isArray(item.to) ? item.to[0] : (item.to || 'sales@baachko.com');
 
           // Clean Gmail/Outlook quoted text history so only fresh reply is shown
-          let cleanBody = item.text;
-          if (!cleanBody && item.html) {
-            let htmlNoQuote = item.html.replace(/<div class="gmail_quote[\s\S]*$/i, '');
-            htmlNoQuote = htmlNoQuote.replace(/<blockquote[\s\S]*$/i, '');
-            cleanBody = htmlNoQuote.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-          }
-          if (!cleanBody) {
-            cleanBody = (item.html ? item.html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '') || 'Incoming email received via baachko.com MX server.';
-          }
+          const cleanBody = item.cleanBody || cleanEmailBody(item.text, item.html) || 'Incoming email received via baachko.com MX server.';
 
           const newMsg = {
             id: msgId,
@@ -253,7 +293,8 @@ export default function EmailCenterPage() {
             senderName: senderName,
             senderEmail: senderEmail,
             recipientEmail: recipient,
-            tier: recipient.includes('quotes') ? 'Quotations' : (recipient.includes('karan') ? 'Direct' : (recipient.includes('reach') ? 'Vendors' : 'Corporate')),
+            cc: item.cc && (Array.isArray(item.cc) ? item.cc.length > 0 : Boolean(item.cc)) ? item.cc : undefined,
+            tier: recipient.includes('quotes') ? 'Quotations' : (recipient.includes('reach') ? 'Vendors' : 'Corporate'),
             subject: item.subject || 'Incoming Mail',
             body: cleanBody,
             timestamp: item.created_at || new Date().toISOString(),
@@ -410,13 +451,17 @@ export default function EmailCenterPage() {
 
     const chosenTier = getSenderTier(replyTierId);
     const replySubject = `Re: ${activeThread.messages[activeThread.messages.length - 1]?.subject || 'Baachko Industrial Packaging'}`;
+    const targetEmail = (replyToEmail || activeThread.email).trim();
+    const isDifferentEmail = targetEmail.toLowerCase() !== activeThread.email.toLowerCase();
+    const parsedCc = replyCc.trim() ? replyCc.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [];
 
     try {
       const res = await fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: activeThread.email,
+          to: targetEmail,
+          cc: parsedCc.length > 0 ? parsedCc : undefined,
           subject: replySubject,
           message: replyBody.trim(),
           fromName: chosenTier.fromName,
@@ -430,13 +475,14 @@ export default function EmailCenterPage() {
         throw new Error(data.error || 'Failed to dispatch email via Resend.');
       }
 
-      // Append new message to the active thread's trail
+      // Append new message
       const newMessage = {
         id: `msg-${Date.now()}`,
         senderType: 'outbound',
         senderName: chosenTier.fromName,
         senderEmail: chosenTier.email,
-        recipientEmail: activeThread.email,
+        recipientEmail: targetEmail,
+        cc: parsedCc.length > 0 ? parsedCc : undefined,
         tier: chosenTier.name,
         tierId: chosenTier.id,
         subject: replySubject,
@@ -445,19 +491,41 @@ export default function EmailCenterPage() {
         status: 'Delivered'
       };
 
-      setThreads(prev => prev.map(t => {
-        if (t.id === activeThread.id) {
-          return {
-            ...t,
-            status: t.status === 'New' ? 'Quoted' : 'In Follow-up',
-            lastUpdated: new Date().toISOString(),
-            messages: [...t.messages, newMessage]
-          };
-        }
-        return t;
-      }));
+      if (isDifferentEmail) {
+        // Different email address chosen -> start a new conversation for this email ("the new mail goes in")
+        const newThreadId = `thread-${Date.now()}`;
+        const newThread = {
+          id: newThreadId,
+          contactName: targetEmail.split('@')[0],
+          company: targetEmail.split('@')[1] || 'External Partner',
+          email: targetEmail,
+          phone: '',
+          targetSku: '',
+          category: 'quote',
+          status: 'Quoted',
+          lastUpdated: new Date().toISOString(),
+          messages: [newMessage]
+        };
+        setThreads(prev => [newThread, ...prev]);
+        setSelectedThreadId(newThreadId);
+      } else {
+        // Existing email address used -> trail in the current conversation
+        setThreads(prev => prev.map(t => {
+          if (t.id === activeThread.id) {
+            return {
+              ...t,
+              status: t.status === 'New' ? 'Quoted' : 'In Follow-up',
+              lastUpdated: new Date().toISOString(),
+              messages: [...t.messages, newMessage]
+            };
+          }
+          return t;
+        }));
+      }
 
       setReplyBody('');
+      setReplyCc('');
+      setShowCcInput(false);
       setReplyAlert({
         type: 'success',
         text: `Sent via ${chosenTier.email} (Delivery ID: ${data.id || 'ok'})`
@@ -478,6 +546,7 @@ export default function EmailCenterPage() {
   const handleOpenCompose = (prefill = {}) => {
     setComposeTierId(prefill.tierId || 'sales');
     setComposeTo(prefill.to || '');
+    setComposeCc(prefill.cc || '');
     setComposeContactName(prefill.contactName || '');
     setComposeCompany(prefill.company || '');
     setComposeCategory(prefill.category || 'quote');
@@ -517,6 +586,7 @@ export default function EmailCenterPage() {
     setComposeError(null);
 
     const chosenTier = getSenderTier(composeTierId);
+    const parsedComposeCc = composeCc.trim() ? composeCc.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [];
 
     try {
       const res = await fetch('/api/send-email', {
@@ -524,6 +594,7 @@ export default function EmailCenterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: composeTo.trim(),
+          cc: parsedComposeCc.length > 0 ? parsedComposeCc : undefined,
           subject: composeSubject.trim(),
           message: composeBody.trim(),
           fromName: chosenTier.fromName,
@@ -546,6 +617,7 @@ export default function EmailCenterPage() {
         senderName: chosenTier.fromName,
         senderEmail: chosenTier.email,
         recipientEmail: composeTo.trim(),
+        cc: parsedComposeCc.length > 0 ? parsedComposeCc : undefined,
         tier: chosenTier.name,
         tierId: chosenTier.id,
         subject: composeSubject.trim(),
@@ -598,33 +670,23 @@ export default function EmailCenterPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4">
+    <div className="h-full flex flex-col min-h-0 bg-white">
       
       {/* ==================================================== */}
-      {/* TOP ARCHITECTURE BAR & CONTROLS                     */}
+      {/* TOP TOOLBAR: SEARCH & ACTIONS (FLUSH, SECTIONLESS)   */}
       {/* ==================================================== */}
-      <div className="bg-white rounded-2xl p-4 shadow-2xs border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
+      <div className="px-4 sm:px-6 py-3 border-b border-gray-200 bg-white flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 shrink-0">
         
-        {/* Left: Branding & Action */}
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => handleOpenCompose()}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-sm rounded-xl shadow-sm transition hover:shadow-md cursor-pointer"
-          >
-            <Plus size={18} /> Compose New Email
-          </button>
-        </div>
-
-        {/* Right: Search Input & Sync */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-72">
+        {/* Left: Search Input & Sync (Swapped to Left) */}
+        <div className="flex items-center gap-2 flex-1 max-w-md w-full">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search conversations, emails, SKUs..."
-              className="w-full pl-9 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none transition"
+              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 hover:bg-gray-100/60 focus:bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition"
             />
             {searchQuery && (
               <button 
@@ -640,32 +702,42 @@ export default function EmailCenterPage() {
             onClick={() => fetchAndSyncAll()}
             disabled={isRefreshing}
             title="Refresh Inbound Mails & Leads"
-            className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+            className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg border border-gray-200 transition cursor-pointer shrink-0"
           >
-            <RefreshCw size={17} className={isRefreshing ? 'animate-spin text-amber-600' : ''} />
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin text-amber-600' : ''} />
+          </button>
+        </div>
+
+        {/* Right: Compose New Email (Swapped to Right) */}
+        <div className="flex items-center justify-end shrink-0">
+          <button
+            onClick={() => handleOpenCompose()}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs sm:text-sm rounded-lg shadow-xs transition hover:shadow-sm cursor-pointer"
+          >
+            <Plus size={16} /> Compose New Email
           </button>
         </div>
       </div>
 
       {/* ==================================================== */}
-      {/* MAIN TWO-PANE GMAIL-STYLE INTERFACE                 */}
+      {/* MAIN TWO-PANE WORKSPACE (FLUSH, SECTIONLESS)         */}
       {/* ==================================================== */}
-      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col md:flex-row min-h-0">
+      <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-white">
         
         {/* -------------------------------------------------- */}
         {/* LEFT PANE: GMAIL-STYLE MAIL LIST                   */}
         {/* -------------------------------------------------- */}
-        <div className={`w-full md:w-96 lg:w-[410px] border-r border-gray-200 flex flex-col bg-white shrink-0 ${
+        <div className={`w-full md:w-88 lg:w-[380px] xl:w-[420px] border-r border-gray-200 flex flex-col bg-white shrink-0 ${
           isMobileViewingThread ? 'hidden md:flex' : 'flex'
         }`}>
           
           {/* Category Dropdown Filter */}
-          <div className="p-3 border-b border-gray-100 bg-gray-50/60">
-            <div className="relative">
+          <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between gap-2">
+            <div className="relative flex-1">
               <select
                 value={activeTab}
                 onChange={(e) => setActiveTab(e.target.value)}
-                className="w-full text-xs font-bold py-2.5 px-3 pr-8 rounded-xl border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer appearance-none shadow-2xs"
+                className="w-full text-xs font-semibold py-1.5 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none cursor-pointer appearance-none"
               >
                 <option value="all">All Mails ({threads.length})</option>
                 <option value="quotes">Quotes & RFQs ({threads.filter(t => t.category === 'quote').length})</option>
@@ -674,6 +746,9 @@ export default function EmailCenterPage() {
               </select>
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             </div>
+            <span className="text-[11px] font-medium text-gray-400 shrink-0">
+              {filteredThreads.length} items
+            </span>
           </div>
 
           {/* Email Conversation Threads List */}
@@ -743,7 +818,7 @@ export default function EmailCenterPage() {
                       </div>
 
                       <div className="text-xs text-gray-400 line-clamp-1 leading-relaxed">
-                        {lastMsg?.body || 'No message content yet.'}
+                        {cleanEmailBody(lastMsg?.body || 'No message content yet.')}
                       </div>
                     </div>
                   </div>
@@ -761,8 +836,8 @@ export default function EmailCenterPage() {
         }`}>
           {activeThread ? (
             <>
-              {/* Thread Header Bar */}
-              <div className="p-4 sm:p-5 bg-white border-b border-gray-200 flex items-center justify-between gap-3 shrink-0 shadow-2xs">
+              {/* Thread Header Bar with Conversation Switcher */}
+              <div className="p-4 sm:p-5 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-2xs">
                 
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Mobile Back Button */}
@@ -793,6 +868,26 @@ export default function EmailCenterPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Conversation Switcher Dropdown in Same Window */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:inline">
+                    Conversation:
+                  </span>
+                  <select
+                    value={activeThread.id}
+                    onChange={(e) => setSelectedThreadId(e.target.value)}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-gray-300 bg-gray-50 hover:bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer max-w-[200px] sm:max-w-[280px] truncate"
+                    title="Switch Conversation"
+                  >
+                    {threads.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.contactName}: {t.messages[t.messages.length - 1]?.subject || 'Direct Thread'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
               </div>
 
               {/* Thread Trail Timeline (Scrollable) */}
@@ -859,12 +954,19 @@ export default function EmailCenterPage() {
                         <div className={`text-sm whitespace-pre-wrap leading-relaxed ${
                           isInbound ? 'text-gray-700' : 'text-gray-200'
                         }`}>
-                          {msg.body}
+                          {cleanEmailBody(msg.body)}
                         </div>
 
-                        {/* Footer status */}
-                        <div className="mt-3 pt-2.5 border-t border-gray-100/10 flex items-center justify-between text-[11px] text-gray-400">
-                          <span>To: {msg.recipientEmail}</span>
+                        {/* Footer status & CC */}
+                        <div className="mt-3 pt-2.5 border-t border-gray-100/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-400">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span>To: {msg.recipientEmail}</span>
+                            {msg.cc && (
+                              <span className="text-amber-400 font-medium">
+                                • CC: {Array.isArray(msg.cc) ? msg.cc.join(', ') : msg.cc}
+                              </span>
+                            )}
+                          </div>
                           <span className="flex items-center gap-1 font-semibold text-emerald-400">
                             <Check size={12} /> {msg.status || 'Delivered'}
                           </span>
@@ -881,26 +983,73 @@ export default function EmailCenterPage() {
               <div className="p-4 sm:p-5 bg-white border-t border-gray-200 shrink-0 shadow-lg">
                 <form onSubmit={handleSendReply} className="space-y-3">
                   
-                  {/* Reply Controls: Sender Identity */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1">
-                      <Reply size={13} className="text-amber-700" /> From:
-                    </span>
-                    
-                    <div className="relative">
-                      <select
-                        value={replyTierId}
-                        onChange={(e) => setReplyTierId(e.target.value)}
-                        className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer appearance-none"
-                      >
-                        {SENDER_TIERS.map(tier => (
-                          <option key={tier.id} value={tier.id}>
-                            {tier.email} ({tier.fromName})
-                          </option>
-                        ))}
-                      </select>
+                  {/* Reply Controls: Sender Identity, Recipient, and CC */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50/70 p-2.5 rounded-xl border border-gray-200">
+                    <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
+                      {/* FROM Dropdown */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1">
+                          <Reply size={13} className="text-amber-700" /> From:
+                        </span>
+                        <select
+                          value={replyTierId}
+                          onChange={(e) => setReplyTierId(e.target.value)}
+                          className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
+                        >
+                          {SENDER_TIERS.map(tier => (
+                            <option key={tier.id} value={tier.id}>
+                              {tier.email} ({tier.fromName})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* TO Input */}
+                      <div className="flex items-center gap-1.5 flex-1 min-w-[200px]">
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider shrink-0">
+                          To:
+                        </span>
+                        <input
+                          type="email"
+                          value={replyToEmail}
+                          onChange={(e) => setReplyToEmail(e.target.value)}
+                          placeholder="recipient@company.com"
+                          className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none font-mono"
+                          required
+                        />
+                      </div>
                     </div>
+
+                    {/* CC Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setShowCcInput(!showCcInput)}
+                      className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition cursor-pointer shrink-0 ${
+                        showCcInput || replyCc.trim()
+                          ? 'bg-amber-100 text-amber-900 border-amber-300'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+                      }`}
+                      title="Add Carbon Copy (CC) recipients"
+                    >
+                      {showCcInput ? '− CC' : '+ CC'}
+                    </button>
                   </div>
+
+                  {/* Expandable CC Input Row */}
+                  {(showCcInput || replyCc.trim()) && (
+                    <div className="flex items-center gap-2 px-1">
+                      <span className="text-xs font-bold text-gray-600 uppercase tracking-wider shrink-0">
+                        CC:
+                      </span>
+                      <input
+                        type="text"
+                        value={replyCc}
+                        onChange={(e) => setReplyCc(e.target.value)}
+                        placeholder="Comma-separated emails (e.g. procurement@supplier.com, team@baachko.com)"
+                        className="w-full text-xs px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none font-mono"
+                      />
+                    </div>
+                  )}
 
                   {/* Reply Alert */}
                   {replyAlert && (

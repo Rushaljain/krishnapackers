@@ -24,6 +24,42 @@ function getResendApiKey() {
   return null;
 }
 
+function cleanEmailBody(bodyText, htmlContent) {
+  let text = "";
+  if (htmlContent && typeof htmlContent === "string") {
+    let cleanHtml = htmlContent
+      .replace(/<div[^>]*class=["'][^"']*gmail_quote[^"']*["'][\s\S]*$/i, "")
+      .replace(/<div[^>]*class=["'][^"']*gmail_attr[^"']*["'][\s\S]*$/i, "")
+      .replace(/<blockquote[\s\S]*$/i, "")
+      .replace(/<div[^>]*id=["']divRplyFwdMsg["'][\s\S]*$/i, "")
+      .replace(/<div[^>]*id=["']appendonsend["'][\s\S]*$/i, "");
+    text = cleanHtml
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<\/div>/gi, "\n")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'");
+  }
+  if (!text.trim() && bodyText && typeof bodyText === "string") text = bodyText;
+  if (!text) return "";
+  const lines = text.split("\n");
+  const fresh = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^On\s+.*wrote:?\s*$/i.test(trimmed)) break;
+    if (/^-{2,}\s*Original Message\s*-{2,}/i.test(trimmed)) break;
+    if (/^From:\s+.*@.*/i.test(trimmed)) break;
+    if (/^>\s*/.test(trimmed)) continue;
+    fresh.push(line);
+  }
+  return fresh.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -58,7 +94,12 @@ export default async function handler(req, res) {
             try {
               if (resend.emails.receiving.get) {
                 const fullRes = await resend.emails.receiving.get(item.id);
-                return fullRes.data || fullRes || item;
+                const fullData = fullRes.data || fullRes || item;
+                const cleaned = cleanEmailBody(fullData.text, fullData.html);
+                return {
+                  ...fullData,
+                  cleanBody: cleaned || fullData.text || 'Incoming email received via baachko.com MX server.'
+                };
               }
               return item;
             } catch (err) {

@@ -167,7 +167,7 @@ export default function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8 bg-gray-50">
+        <main className={`flex-1 ${location.pathname === '/adminpanel/emails' ? 'overflow-hidden p-0 bg-white flex flex-col' : 'overflow-auto p-4 sm:p-6 md:p-8 bg-gray-50'}`}>
           <Outlet />
         </main>
       </div>

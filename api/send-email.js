@@ -121,6 +121,8 @@ export default async function handler(req, res) {
   try {
     const { 
       to, 
+      cc,
+      bcc,
       subject, 
       message, 
       html, 
@@ -161,9 +163,33 @@ export default async function handler(req, res) {
 
     const emailHtml = html || generateBrandedHtml(message, subject, fromName);
 
+    // Parse CC list if provided
+    let ccList = undefined;
+    if (cc) {
+      if (Array.isArray(cc)) {
+        ccList = cc.map(c => typeof c === 'string' ? c.trim() : '').filter(Boolean);
+      } else if (typeof cc === 'string' && cc.trim()) {
+        ccList = cc.split(/[,;]/).map(c => c.trim()).filter(Boolean);
+      }
+      if (ccList && ccList.length === 0) ccList = undefined;
+    }
+
+    // Parse BCC list if provided
+    let bccList = undefined;
+    if (bcc) {
+      if (Array.isArray(bcc)) {
+        bccList = bcc.map(b => typeof b === 'string' ? b.trim() : '').filter(Boolean);
+      } else if (typeof bcc === 'string' && bcc.trim()) {
+        bccList = bcc.split(/[,;]/).map(b => b.trim()).filter(Boolean);
+      }
+      if (bccList && bccList.length === 0) bccList = undefined;
+    }
+
     const emailPayload = {
       from: formattedFrom,
       to: Array.isArray(to) ? to : [to],
+      cc: ccList,
+      bcc: bccList,
       subject: subject,
       html: emailHtml,
       text: message || subject,
