@@ -121,6 +121,38 @@ export const getSenderTier = (id) => {
   return found || SENDER_TIERS[0];
 };
 
+export function normalizeSubject(subject = '') {
+  if (!subject || typeof subject !== 'string') return '';
+  return subject
+    .replace(/^(\s*(re|fwd|fw):\s*)+/i, '')
+    .trim()
+    .toLowerCase();
+}
+
+export function matchesSenderTier(msg, tierId) {
+  if (!msg || !tierId) return false;
+  if (tierId === 'all') return true;
+  const tier = getSenderTier(tierId);
+  const targetEmail = tier.email.toLowerCase();
+  const idStr = tier.id.toLowerCase();
+
+  const sender = (msg.senderEmail || '').toLowerCase();
+  const recipient = (msg.recipientEmail || '').toLowerCase();
+  const tierField = (msg.tier || '').toLowerCase();
+  const msgTierId = (msg.tierId || '').toLowerCase();
+
+  if (sender === targetEmail || msgTierId === idStr) return true;
+  if (recipient === targetEmail) return true;
+  if (sender.includes(idStr) || recipient.includes(idStr)) return true;
+  if (tierField.includes(idStr)) return true;
+  if (idStr === 'quotes' && (tierField.includes('quot') || sender.includes('quote') || recipient.includes('quote'))) return true;
+  if (idStr === 'sales' && (tierField.includes('sale') || tierField.includes('corporate') || sender.includes('sale') || recipient.includes('sale'))) return true;
+  if (idStr === 'enquiry' && (tierField.includes('enquir') || tierField.includes('vendor') || sender.includes('enquir') || recipient.includes('enquir'))) return true;
+  if (idStr === 'karan' && (tierField.includes('karan') || sender.includes('karan') || recipient.includes('karan'))) return true;
+
+  return false;
+}
+
 // ==========================================
 // PACKAGING EMAIL TEMPLATES
 // ==========================================
@@ -253,6 +285,7 @@ export default function EmailCenterPage() {
 
   // Inline Quick Reply State (for active thread)
   const [replyTierId, setReplyTierId] = useState('sales');
+  const [senderFilter, setSenderFilter] = useState('all');
   const [replyToEmail, setReplyToEmail] = useState('');
   const [replyCc, setReplyCc] = useState('');
   const [showCcInput, setShowCcInput] = useState(false);
@@ -337,8 +370,16 @@ export default function EmailCenterPage() {
             status: 'Received'
           };
 
-          // Find if we already have a conversation thread with this sender email
-          const existingIndex = updatedThreads.findIndex(t => t.email?.toLowerCase().trim() === senderEmail.toLowerCase().trim());
+          // Find if we already have a conversation thread with this sender email & matching subject
+          const normIncomingSubject = normalizeSubject(item.subject);
+          const existingIndex = updatedThreads.findIndex(t => {
+            if (t.email?.toLowerCase().trim() !== senderEmail.toLowerCase().trim()) return false;
+            const normThreadSubject = normalizeSubject(t.subject || t.messages?.[0]?.subject || '');
+            if (normThreadSubject && normIncomingSubject && (normThreadSubject === normIncomingSubject || normIncomingSubject.includes(normThreadSubject) || normThreadSubject.includes(normIncomingSubject))) {
+              return true;
+            }
+            return t.messages?.some(m => normalizeSubject(m.subject) === normIncomingSubject);
+          });
 
           if (existingIndex !== -1) {
             const currentThread = updatedThreads[existingIndex];
@@ -352,7 +393,7 @@ export default function EmailCenterPage() {
               };
             }
           } else {
-            // Create a brand new thread for this contact
+            // Create a brand new distinct conversation thread for this contact & subject
             updatedThreads.unshift({
               id: `inbound-${item.id}`,
               contactName: senderName,
@@ -360,8 +401,9 @@ export default function EmailCenterPage() {
               email: senderEmail,
               phone: '',
               targetSku: '',
+              subject: item.subject || 'Incoming Inquiry',
               category: recipient.includes('enquiry') ? 'vendor' : 'quote',
-              status: 'Received',
+              status: 'New',
               lastUpdated: item.created_at || new Date().toISOString(),
               messages: [newMsg]
             });
@@ -461,12 +503,24 @@ export default function EmailCenterPage() {
     return threads.find(t => t.id === selectedThreadId) || filteredThreads[0] || threads[0] || null;
   }, [threads, selectedThreadId, filteredThreads]);
 
-  // Keep replyTierId aligned with active thread's category
+  // Keep replyTierId & senderFilter aligned with active thread's category & latest message
   useEffect(() => {
     if (activeThread) {
-      if (activeThread.category === 'vendor') setReplyTierId('enquiry');
-      else if (activeThread.category === 'quote') setReplyTierId('quotes');
-      else setReplyTierId('sales');
+      const msgs = activeThread.messages || [];
+      const lastMsg = msgs[msgs.length - 1];
+      let initialTier = 'sales';
+      if (lastMsg) {
+        if (lastMsg.tierId) initialTier = lastMsg.tierId;
+        else if (lastMsg.recipientEmail?.includes('quotes') || lastMsg.senderEmail?.includes('quotes')) initialTier = 'quotes';
+        else if (lastMsg.recipientEmail?.includes('karan') || lastMsg.senderEmail?.includes('karan')) initialTier = 'karan';
+        else if (lastMsg.recipientEmail?.includes('enquiry') || lastMsg.senderEmail?.includes('enquiry')) initialTier = 'enquiry';
+      } else if (activeThread.category === 'vendor') {
+        initialTier = 'enquiry';
+      } else if (activeThread.category === 'quote') {
+        initialTier = 'quotes';
+      }
+      setReplyTierId(initialTier);
+      setSenderFilter(initialTier);
     }
   }, [activeThread?.id]);
 
@@ -476,6 +530,13 @@ export default function EmailCenterPage() {
       setReplyToEmail(activeThread.email);
     }
   }, [activeThread?.id, activeThread?.email]);
+
+  // Filter messages based on active sender dropdown selection
+  const displayedMessages = useMemo(() => {
+    if (!activeThread?.messages) return [];
+    if (senderFilter === 'all') return activeThread.messages;
+    return activeThread.messages.filter(msg => matchesSenderTier(msg, senderFilter));
+  }, [activeThread?.messages, senderFilter]);
 
   // Handle Thread Status Change
   const updateThreadStatus = (newStatus) => {
@@ -656,56 +717,26 @@ export default function EmailCenterPage() {
         throw new Error(data.error || 'Failed to dispatch email via Resend.');
       }
 
-      // Check if thread already exists for this email
-      const existingThread = threads.find(t => t.email.toLowerCase() === composeTo.trim().toLowerCase());
-
-      const newMessage = {
-        id: `msg-${Date.now()}`,
-        senderType: 'outbound',
-        senderName: chosenTier.fromName,
-        senderEmail: chosenTier.email,
-        recipientEmail: composeTo.trim(),
-        cc: parsedComposeCc.length > 0 ? parsedComposeCc : undefined,
-        tier: chosenTier.name,
-        tierId: chosenTier.id,
+      // ALWAYS create a distinct new conversation thread for Compose New Email
+      const newThreadId = `thread-${Date.now()}`;
+      const newThread = {
+        id: newThreadId,
+        contactName: composeContactName.trim() || composeTo.split('@')[0],
+        company: composeCompany.trim() || (composeCategory === 'vendor' ? 'Supplier / Vendor' : 'Direct Inquiry'),
+        email: composeTo.trim(),
+        phone: '',
+        targetSku: '',
         subject: composeSubject.trim(),
-        body: composeBody.trim(),
-        timestamp: new Date().toISOString(),
-        status: 'Delivered'
+        category: composeCategory,
+        status: composeCategory === 'vendor' ? 'In Follow-up' : 'Quoted',
+        lastUpdated: new Date().toISOString(),
+        messages: [newMessage]
       };
 
-      if (existingThread) {
-        // Append to existing
-        setThreads(prev => prev.map(t => {
-          if (t.id === existingThread.id) {
-            return {
-              ...t,
-              lastUpdated: new Date().toISOString(),
-              messages: [...t.messages, newMessage]
-            };
-          }
-          return t;
-        }));
-        setSelectedThreadId(existingThread.id);
-      } else {
-        // Create new thread
-        const newThreadId = `thread-${Date.now()}`;
-        const newThread = {
-          id: newThreadId,
-          contactName: composeContactName.trim() || composeTo.split('@')[0],
-          company: composeCompany.trim() || (composeCategory === 'vendor' ? 'Supplier / Vendor' : 'Direct Inquiry'),
-          email: composeTo.trim(),
-          phone: '',
-          targetSku: '',
-          category: composeCategory,
-          status: composeCategory === 'vendor' ? 'In Follow-up' : 'Quoted',
-          lastUpdated: new Date().toISOString(),
-          messages: [newMessage]
-        };
-
-        setThreads(prev => [newThread, ...prev]);
-        setSelectedThreadId(newThreadId);
-      }
+      setThreads(prev => [newThread, ...prev]);
+      setSelectedThreadId(newThreadId);
+      setSenderFilter(chosenTier.id);
+      setReplyTierId(chosenTier.id);
 
       setIsComposeOpen(false);
       setIsMobileViewingThread(true);
@@ -941,6 +972,35 @@ export default function EmailCenterPage() {
               {/* Thread Trail Timeline (Scrollable, Generous Space) */}
               <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
                 
+                {/* Active Channel Trail Banner */}
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-slate-50 rounded-xl border border-gray-200 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">Active Trail:</span>
+                    <span className="font-semibold text-gray-800 flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${senderFilter === 'all' ? 'bg-amber-600' : getSenderTier(senderFilter).dotColor}`} />
+                      {senderFilter === 'all' ? 'All Channels (Combined History)' : `${getSenderTier(senderFilter).email} (${getSenderTier(senderFilter).fromName})`}
+                    </span>
+                    <span className="text-gray-400 font-mono text-[11px]">({displayedMessages.length} msgs)</span>
+                  </div>
+                  {senderFilter !== 'all' ? (
+                    <button
+                      type="button"
+                      onClick={() => setSenderFilter('all')}
+                      className="text-[11px] font-semibold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                    >
+                      Show All Channels
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setSenderFilter(replyTierId)}
+                      className="text-[11px] font-semibold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                    >
+                      Filter by {getSenderTier(replyTierId).name}
+                    </button>
+                  )}
+                </div>
+
                 {/* Timeline Start Notice */}
                 <div className="text-center">
                   <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -948,8 +1008,28 @@ export default function EmailCenterPage() {
                   </span>
                 </div>
 
-                {/* Trail Messages */}
-                {(activeThread.messages || []).map((msg, index) => {
+                {/* Trail Messages Filtered by Sender */}
+                {displayedMessages.length === 0 ? (
+                  <div className="text-center py-12 px-4 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center mx-auto mb-2 font-bold text-xs">
+                      {getSenderTier(senderFilter).badge}
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800">
+                      No messages on the {getSenderTier(senderFilter).email} channel yet
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+                      Replies sent using {getSenderTier(senderFilter).email} will appear here as a distinct, isolated conversation trail matching the client inbox.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSenderFilter('all')}
+                      className="mt-3 text-xs font-semibold text-amber-700 hover:text-amber-800 underline cursor-pointer"
+                    >
+                      View all channel messages ({activeThread.messages?.length || 0})
+                    </button>
+                  </div>
+                ) : (
+                  displayedMessages.map((msg, index) => {
                   const isInbound = msg.senderType === 'inbound';
                   const msgTier = getSenderTier(msg.tierId);
 
@@ -1022,7 +1102,7 @@ export default function EmailCenterPage() {
                       </div>
                     </div>
                   );
-                })}
+                }))}
               </div>
 
               {/* ==================================================== */}
@@ -1041,7 +1121,11 @@ export default function EmailCenterPage() {
                         </span>
                         <select
                           value={replyTierId}
-                          onChange={(e) => setReplyTierId(e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setReplyTierId(val);
+                            setSenderFilter(val);
+                          }}
                           className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
                         >
                           {SENDER_TIERS.map(tier => (
