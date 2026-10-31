@@ -173,63 +173,32 @@ Best regards,`
       const customKey = localStorage.getItem('resend_api_key') || undefined;
       let emailId = null;
 
-      // 1. Try serverless route /api/send-email first
-      try {
-        const res = await fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: to.trim(),
-            subject: subject.trim(),
-            message: message.trim(),
-            fromName: fromName.trim(),
-            fromEmail: fromEmail.trim(),
-            apiKey: customKey,
-            leadId: lead.id
-          })
-        });
+      // 1. Send via backend route /api/send-email
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: to.trim(),
+          subject: subject.trim(),
+          message: message.trim(),
+          fromName: fromName.trim(),
+          fromEmail: fromEmail.trim(),
+          apiKey: customKey,
+          leadId: lead.id
+        })
+      });
 
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-          const data = await res.json();
-          if (!res.ok || data.error) {
-            throw new Error(data.error || 'Failed to send email via Resend.');
-          }
-          emailId = data.id;
-        } else {
-          throw new Error('FALLBACK_DIRECT');
-        }
-      } catch (err) {
-        // 2. Direct fallback to Resend REST API if serverless route is not ready
-        if (err.message === 'FALLBACK_DIRECT' || !emailId) {
-          if (!customKey) {
-            throw new Error('Resend API Key is missing. Please save your API key in the Mailing Center or Vercel Environment Variables.');
-          }
-
-          const directRes = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${customKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              from: `${fromName.trim()} <${fromEmail.trim()}>`,
-              to: [to.trim()],
-              subject: subject.trim(),
-              html: generateBrandedHtml(message.trim(), subject.trim(), fromName.trim()),
-              text: message.trim()
-            })
-          });
-
-          const directData = await directRes.json();
-          if (!directRes.ok || directData.error) {
-            throw new Error((directData.error && directData.error.message) || directData.message || 'Resend API rejected the request.');
-          }
-          emailId = directData.id;
-        } else {
-          throw err;
-        }
+      const contentType = res.headers.get('content-type') || '';
+      let data = null;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
       }
+
+      if (!res.ok || data?.error) {
+        throw new Error(data?.error || `Failed to dispatch email (${res.status})`);
+      }
+
+      emailId = data?.id;
 
       // Auto-update lead status to 'Contacted' in Supabase
       try {

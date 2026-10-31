@@ -1,5 +1,32 @@
 import { Resend } from 'resend';
 
+function getResendApiKey(customApiKey) {
+  if (customApiKey && typeof customApiKey === 'string' && customApiKey.trim()) {
+    return customApiKey.trim();
+  }
+  const candidates = [
+    'RESEND_API_KEY',
+    'VITE_RESEND_API_KEY',
+    'RESEND_KEY',
+    'RESEND_API',
+    'RESEND_TOKEN',
+    'resend_api_key',
+    'resendApiKey'
+  ];
+  for (const k of candidates) {
+    if (process.env[k] && typeof process.env[k] === 'string' && process.env[k].trim()) {
+      return process.env[k].trim();
+    }
+  }
+  for (const envKey of Object.keys(process.env)) {
+    if (envKey.toUpperCase().includes('RESEND') && envKey.toUpperCase().includes('KEY')) {
+      const val = process.env[envKey];
+      if (val && typeof val === 'string' && val.trim()) return val.trim();
+    }
+  }
+  return null;
+}
+
 function generateBrandedHtml(content, subject, senderName = "Baachko Sales Team") {
   // Replace line breaks with HTML paragraphs/breaks
   const formattedBody = content
@@ -116,11 +143,11 @@ export default async function handler(req, res) {
     }
 
     // Determine Resend API Key (Priority: customApiKey > env vars)
-    const apiKey = customApiKey || process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
+    const apiKey = getResendApiKey(customApiKey);
 
     if (!apiKey) {
       return res.status(400).json({ 
-        error: 'Resend API Key is missing. Please configure RESEND_API_KEY in your Vercel project Environment Variables or pass it in the request settings.' 
+        error: 'Resend API Key is missing. Please configure RESEND_API_KEY in your Vercel project Environment Variables and ensure a redeployment has completed.' 
       });
     }
 

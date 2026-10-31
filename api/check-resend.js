@@ -1,5 +1,32 @@
 import { Resend } from 'resend';
 
+function getResendApiKey(customApiKey) {
+  if (customApiKey && typeof customApiKey === 'string' && customApiKey.trim()) {
+    return customApiKey.trim();
+  }
+  const candidates = [
+    'RESEND_API_KEY',
+    'VITE_RESEND_API_KEY',
+    'RESEND_KEY',
+    'RESEND_API',
+    'RESEND_TOKEN',
+    'resend_api_key',
+    'resendApiKey'
+  ];
+  for (const k of candidates) {
+    if (process.env[k] && typeof process.env[k] === 'string' && process.env[k].trim()) {
+      return process.env[k].trim();
+    }
+  }
+  for (const envKey of Object.keys(process.env)) {
+    if (envKey.toUpperCase().includes('RESEND') && envKey.toUpperCase().includes('KEY')) {
+      const val = process.env[envKey];
+      if (val && typeof val === 'string' && val.trim()) return val.trim();
+    }
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,12 +42,16 @@ export default async function handler(req, res) {
 
   try {
     const customApiKey = req.method === 'POST' ? req.body?.apiKey : req.query?.apiKey;
-    const apiKey = customApiKey || process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
+    const apiKey = getResendApiKey(customApiKey);
 
     if (!apiKey) {
+      const foundResendKeys = Object.keys(process.env).filter(k => k.toLowerCase().includes('resend'));
       return res.status(200).json({
         configured: false,
-        message: 'Resend API Key is not set. Add RESEND_API_KEY to your Vercel Environment Variables or configure it in Admin settings.'
+        detectedKeys: foundResendKeys,
+        deployment: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'local',
+        env: process.env.VERCEL_ENV || 'unknown',
+        message: 'Resend API Key is not set in this deployment. Please verify that RESEND_API_KEY is configured for Production in Vercel and that a redeploy has been triggered.'
       });
     }
 
