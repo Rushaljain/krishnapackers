@@ -185,10 +185,15 @@ export default function EmailCenterPage() {
   const [replyBody, setReplyBody] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [replyAlert, setReplyAlert] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Sync with Supabase RFQ Leads & Inbound Resend Emails on Mount
+  // Sync with Supabase RFQ Leads & Inbound Resend Emails on Mount and every 10s
   useEffect(() => {
     fetchAndSyncAll();
+    const interval = setInterval(() => {
+      fetchAndSyncAll(true);
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   // Save threads to localStorage on changes & purge legacy dummy cache
@@ -201,11 +206,16 @@ export default function EmailCenterPage() {
     } catch (e) {}
   }, [threads]);
 
-  const fetchAndSyncAll = async () => {
-    await Promise.allSettled([
-      fetchAndMergeSupabaseLeads(),
-      fetchAndMergeInboundEmails()
-    ]);
+  const fetchAndSyncAll = async (isBackground = false) => {
+    if (!isBackground) setIsRefreshing(true);
+    try {
+      await Promise.allSettled([
+        fetchAndMergeSupabaseLeads(),
+        fetchAndMergeInboundEmails()
+      ]);
+    } finally {
+      if (!isBackground) setIsRefreshing(false);
+    }
   };
 
   const fetchAndMergeInboundEmails = async () => {
@@ -225,7 +235,17 @@ export default function EmailCenterPage() {
           const senderEmail = (sender.match(/<([^>]+)>/)?.[1] || sender).trim();
           const senderName = sender.split('<')[0].replace(/"/g, '').trim() || senderEmail.split('@')[0];
           const recipient = Array.isArray(item.to) ? item.to[0] : (item.to || 'sales@baachko.com');
-          const cleanBody = item.text || (item.html ? item.html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : 'Incoming email received via baachko.com MX server.');
+
+          // Clean Gmail/Outlook quoted text history so only fresh reply is shown
+          let cleanBody = item.text;
+          if (!cleanBody && item.html) {
+            let htmlNoQuote = item.html.replace(/<div class="gmail_quote[\s\S]*$/i, '');
+            htmlNoQuote = htmlNoQuote.replace(/<blockquote[\s\S]*$/i, '');
+            cleanBody = htmlNoQuote.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+          }
+          if (!cleanBody) {
+            cleanBody = (item.html ? item.html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '') || 'Incoming email received via baachko.com MX server.';
+          }
 
           const newMsg = {
             id: msgId,
@@ -233,7 +253,7 @@ export default function EmailCenterPage() {
             senderName: senderName,
             senderEmail: senderEmail,
             recipientEmail: recipient,
-            tier: recipient.includes('quotes') ? 'Quotations' : (recipient.includes('karan') ? 'Direct' : (recipient.includes('enquiry') ? 'Enquiries' : 'Sales')),
+            tier: recipient.includes('quotes') ? 'Quotations' : (recipient.includes('karan') ? 'Direct' : (recipient.includes('reach') ? 'Vendors' : 'Corporate')),
             subject: item.subject || 'Incoming Mail',
             body: cleanBody,
             timestamp: item.created_at || new Date().toISOString(),
@@ -401,7 +421,7 @@ export default function EmailCenterPage() {
           message: replyBody.trim(),
           fromName: chosenTier.fromName,
           fromEmail: chosenTier.email,
-          replyTo: 'karan.apcotraders@gmail.com'
+          replyTo: 'sales@baachko.com'
         })
       });
 
@@ -508,7 +528,7 @@ export default function EmailCenterPage() {
           message: composeBody.trim(),
           fromName: chosenTier.fromName,
           fromEmail: chosenTier.email,
-          replyTo: 'karan.apcotraders@gmail.com'
+          replyTo: 'sales@baachko.com'
         })
       });
 
@@ -618,10 +638,11 @@ export default function EmailCenterPage() {
 
           <button
             onClick={() => fetchAndSyncAll()}
+            disabled={isRefreshing}
             title="Refresh Inbound Mails & Leads"
             className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition cursor-pointer"
           >
-            <RefreshCw size={17} />
+            <RefreshCw size={17} className={isRefreshing ? 'animate-spin text-amber-600' : ''} />
           </button>
         </div>
       </div>

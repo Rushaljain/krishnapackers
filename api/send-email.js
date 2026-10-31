@@ -126,7 +126,7 @@ export default async function handler(req, res) {
       html, 
       fromName = 'Baachko Industrial Packaging', 
       fromEmail, 
-      replyTo = 'karan.apcotraders@gmail.com',
+      replyTo = 'sales@baachko.com',
       apiKey: customApiKey 
     } = req.body || {};
 
