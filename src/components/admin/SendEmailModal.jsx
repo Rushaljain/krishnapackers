@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, Mail, CheckCircle2, AlertCircle, Loader2, Sparkles, Eye, Edit3 } from 'lucide-react';
+import { X, Send, Mail, CheckCircle2, AlertCircle, Loader2, Sparkles, Eye, Edit3, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { SENDER_TIERS } from '../../pages/admin/EmailCenterPage';
 
 function generateBrandedHtml(content, subject, senderName = "Baachko Sales Team") {
   const formattedBody = content
@@ -68,9 +69,9 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
   if (!isOpen || !lead) return null;
 
   const [to, setTo] = useState(lead.email || '');
-  const [fromName, setFromName] = useState('Baachko Industrial Packaging');
+  const [fromName, setFromName] = useState(SENDER_TIERS[0].fromName);
   const [fromEmail, setFromEmail] = useState(
-    localStorage.getItem('resend_sender_email') || 'sales@baachko.com'
+    localStorage.getItem('resend_sender_email') || SENDER_TIERS[0].email
   );
   const [subject, setSubject] = useState(
     `Quotation & Specifications for ${lead.target_product_sku || 'Packaging Sacks'} - Baachko`
@@ -258,7 +259,7 @@ Best regards,`
               <Mail className="h-5 w-5 text-amber-500" />
             </div>
             <div>
-              <h3 className="text-lg font-bold">Reply via Resend (Custom Domain)</h3>
+              <h3 className="text-lg font-bold">Baachko Mailers</h3>
               <p className="text-xs text-gray-300">Sending to: <span className="text-amber-400 font-semibold">{lead.contact_name}</span> ({lead.email})</p>
             </div>
           </div>
@@ -267,57 +268,6 @@ Best regards,`
             className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition"
           >
             <X size={20} />
-          </button>
-        </div>
-
-        {/* Template Selector Bar */}
-        <div className="bg-slate-50 border-b border-gray-200 px-6 py-2.5 flex items-center gap-2 overflow-x-auto text-xs">
-          <span className="font-bold text-gray-500 flex items-center gap-1 flex-shrink-0">
-            <Sparkles size={13} className="text-amber-600" /> Templates:
-          </span>
-          <button
-            type="button"
-            onClick={() => applyTemplate('quote')}
-            className={`px-3 py-1 rounded-full font-medium transition flex-shrink-0 ${
-              activeTemplate === 'quote' 
-                ? 'bg-[#0B1730] text-white shadow-sm' 
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            Quotation & Commercials
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTemplate('details')}
-            className={`px-3 py-1 rounded-full font-medium transition flex-shrink-0 ${
-              activeTemplate === 'details' 
-                ? 'bg-[#0B1730] text-white shadow-sm' 
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            Request Technical Specs
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTemplate('sample')}
-            className={`px-3 py-1 rounded-full font-medium transition flex-shrink-0 ${
-              activeTemplate === 'sample' 
-                ? 'bg-[#0B1730] text-white shadow-sm' 
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            Sample Dispatch
-          </button>
-          <button
-            type="button"
-            onClick={() => applyTemplate('custom')}
-            className={`px-3 py-1 rounded-full font-medium transition flex-shrink-0 ${
-              activeTemplate === 'custom' 
-                ? 'bg-[#0B1730] text-white shadow-sm' 
-                : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            Custom Message
           </button>
         </div>
 
@@ -342,19 +292,27 @@ Best regards,`
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                From (Custom Domain)
+                From *
               </label>
-              <input 
-                type="text" 
-                value={fromEmail}
-                onChange={(e) => {
-                  setFromEmail(e.target.value);
-                  localStorage.setItem('resend_sender_email', e.target.value);
-                }}
-                className="w-full text-xs font-mono px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-gray-50"
-                placeholder="sales@baachko.com"
-                required
-              />
+              <div className="relative">
+                <select
+                  value={fromEmail}
+                  onChange={(e) => {
+                    const chosen = SENDER_TIERS.find(t => t.email === e.target.value) || SENDER_TIERS[0];
+                    setFromEmail(chosen.email);
+                    setFromName(chosen.fromName);
+                    localStorage.setItem('resend_sender_email', chosen.email);
+                  }}
+                  className="w-full text-xs sm:text-sm font-semibold px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white cursor-pointer pr-8"
+                >
+                  {SENDER_TIERS.map(tier => (
+                    <option key={tier.id} value={tier.email}>
+                      {tier.email} ({tier.fromName})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+              </div>
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
@@ -364,7 +322,7 @@ Best regards,`
                 type="text" 
                 value={fromName}
                 onChange={(e) => setFromName(e.target.value)}
-                className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-gray-50"
                 placeholder="Baachko Industrial Packaging"
                 required
               />
