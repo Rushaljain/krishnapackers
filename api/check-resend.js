@@ -83,11 +83,23 @@ export default async function handler(req, res) {
       detailedDomain = getRes.data || getRes;
     }
 
+    // Check if there are any received inbound emails in Resend
+    let receivedEmails = [];
+    try {
+      if (resend.emails && resend.emails.receiving && typeof resend.emails.receiving.list === 'function') {
+        const recvResult = await resend.emails.receiving.list();
+        receivedEmails = recvResult.data?.data || recvResult.data || [];
+      }
+    } catch (recvErr) {
+      console.warn('Receiving list not supported or empty:', recvErr.message);
+    }
+
     return res.status(200).json({
       configured: true,
       validKey: true,
       domains: domains,
       detailedDomain: detailedDomain,
+      receivedEmails: receivedEmails,
       senderEmail: process.env.RESEND_FROM_EMAIL || 'sales@baachko.com',
       message: 'Resend is connected and ready.'
     });

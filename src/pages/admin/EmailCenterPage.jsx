@@ -170,9 +170,9 @@ export default function EmailCenterPage() {
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [replyAlert, setReplyAlert] = useState(null);
 
-  // Sync with Supabase RFQ Leads on Mount
+  // Sync with Supabase RFQ Leads & Inbound Resend Emails on Mount
   useEffect(() => {
-    fetchAndMergeSupabaseLeads();
+    fetchAndSyncAll();
   }, []);
 
   // Save threads to localStorage on changes & purge legacy dummy cache
@@ -184,6 +184,74 @@ export default function EmailCenterPage() {
       localStorage.removeItem('baachko_email_threads');
     } catch (e) {}
   }, [threads]);
+
+  const fetchAndSyncAll = async () => {
+    await Promise.allSettled([
+      fetchAndMergeSupabaseLeads(),
+      fetchAndMergeInboundEmails()
+    ]);
+  };
+
+  const fetchAndMergeInboundEmails = async () => {
+    try {
+      const res = await fetch('/api/inbound-email');
+      if (!res.ok) return;
+      const data = await res.json();
+      const emails = data.emails || [];
+      if (!emails.length) return;
+
+      setThreads(prev => {
+        const cleanPrev = prev.filter(t => !t.id?.startsWith('thread-demo'));
+        const existingIds = new Set(cleanPrev.map(t => t.id));
+        const newInboundThreads = [];
+
+        for (const item of emails) {
+          const threadId = `inbound-${item.id}`;
+          if (existingIds.has(threadId)) continue;
+
+          const sender = typeof item.from === 'string' ? item.from : 'Customer';
+          const senderEmail = sender.match(/<([^>]+)>/)?.[1] || sender;
+          const senderName = sender.split('<')[0].replace(/"/g, '').trim() || senderEmail.split('@')[0];
+          const recipient = Array.isArray(item.to) ? item.to[0] : (item.to || 'sales@baachko.com');
+
+          newInboundThreads.push({
+            id: threadId,
+            contactName: senderName,
+            company: senderEmail.includes('@') ? senderEmail.split('@')[1] : 'Direct Partner',
+            email: senderEmail,
+            phone: '',
+            targetSku: '',
+            category: recipient.includes('reach') ? 'vendor' : 'quote',
+            status: 'Received',
+            lastUpdated: item.created_at || new Date().toISOString(),
+            messages: [
+              {
+                id: `msg-${item.id}`,
+                senderType: 'inbound',
+                senderName: senderName,
+                senderEmail: senderEmail,
+                recipientEmail: recipient,
+                tier: recipient.includes('mail.') ? 'Tier 2 (Transactional)' : (recipient.includes('reach.') ? 'Tier 3 (Vendors)' : 'Tier 1 (Corporate)'),
+                subject: item.subject || 'Incoming Mail',
+                body: item.text || item.snippet || 'Incoming email received via baachko.com MX server.',
+                timestamp: item.created_at || new Date().toISOString(),
+                status: 'Received'
+              }
+            ]
+          });
+        }
+
+        if (newInboundThreads.length === 0) return prev;
+        const merged = [...newInboundThreads, ...cleanPrev];
+        if (merged.length > 0 && !selectedThreadId) {
+          setSelectedThreadId(merged[0].id);
+        }
+        return merged;
+      });
+    } catch (err) {
+      console.warn("Could not sync inbound emails:", err);
+    }
+  };
 
   const fetchAndMergeSupabaseLeads = async () => {
     try {
@@ -521,8 +589,8 @@ export default function EmailCenterPage() {
           </div>
 
           <button
-            onClick={() => fetchAndMergeSupabaseLeads()}
-            title="Refresh Leads from Website"
+            onClick={() => fetchAndSyncAll()}
+            title="Refresh Inbound Mails & Leads"
             className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition cursor-pointer"
           >
             <RefreshCw size={17} />
