@@ -8,46 +8,62 @@ import {
 import { supabase } from '../../lib/supabase';
 
 // ==========================================
-// 3-TIER DOMAIN SEPARATION ARCHITECTURE
+// MAILING LIST SENDER IDENTITIES
 // ==========================================
 export const SENDER_TIERS = [
   {
-    id: 'tier-2',
-    tierNumber: 2,
-    name: 'Transactional',
-    subdomain: 'mail.baachko.com',
-    email: 'quotes@mail.baachko.com',
-    fromName: 'Baachko Quotations & Specs',
-    role: 'Quotations, Technical Spec Sheets, Sample Confirmations',
-    badge: 'Transactional',
-    color: 'bg-amber-100 text-amber-900 border-amber-300',
-    dotColor: 'bg-amber-500'
-  },
-  {
-    id: 'tier-1',
-    tierNumber: 1,
-    name: 'Corporate',
-    subdomain: 'baachko.com',
+    id: 'sales',
+    name: 'Sales',
     email: 'sales@baachko.com',
     fromName: 'Baachko Industrial Packaging',
-    role: 'Executive Deals & Commercial Inquiries',
-    badge: 'Corporate',
+    role: 'Commercial & Sales Inquiries',
+    badge: 'Sales',
     color: 'bg-purple-100 text-purple-900 border-purple-300',
     dotColor: 'bg-purple-500'
   },
   {
-    id: 'tier-3',
-    tierNumber: 3,
-    name: 'Outreach & Vendors',
-    subdomain: 'reach.baachko.com',
-    email: 'updates@reach.baachko.com',
-    fromName: 'Baachko Partner Operations',
-    role: 'Vendor Follow-ups & Supplier Pricing',
-    badge: 'Vendors',
-    color: 'bg-cyan-100 text-cyan-900 border-cyan-300',
-    dotColor: 'bg-cyan-500'
+    id: 'karan',
+    name: 'Direct / Karan',
+    email: 'karan@baachko.com',
+    fromName: 'Karan - Baachko',
+    role: 'Executive & Partner Communications',
+    badge: 'Direct',
+    color: 'bg-blue-100 text-blue-900 border-blue-300',
+    dotColor: 'bg-blue-500'
+  },
+  {
+    id: 'enquiry',
+    name: 'Enquiries',
+    email: 'enquiry@baachko.com',
+    fromName: 'Baachko Enquiries',
+    role: 'General Inquiries & Customer Support',
+    badge: 'Enquiry',
+    color: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+    dotColor: 'bg-emerald-500'
+  },
+  {
+    id: 'quotes',
+    name: 'Quotations',
+    email: 'quotes@baachko.com',
+    fromName: 'Baachko Quotations & Specs',
+    role: 'Quotations, Technical Spec Sheets, Sample Confirmations',
+    badge: 'Quotes',
+    color: 'bg-amber-100 text-amber-900 border-amber-300',
+    dotColor: 'bg-amber-500'
   }
 ];
+
+export const getSenderTier = (id) => {
+  if (!id) return SENDER_TIERS[0];
+  const found = SENDER_TIERS.find(t => 
+    t.id === id || 
+    t.email === id ||
+    (id === 'tier-1' && t.id === 'sales') ||
+    (id === 'tier-2' && t.id === 'quotes') ||
+    (id === 'tier-3' && t.id === 'enquiry')
+  );
+  return found || SENDER_TIERS[0];
+};
 
 // ==========================================
 // PACKAGING EMAIL TEMPLATES
@@ -55,7 +71,7 @@ export const SENDER_TIERS = [
 export const EMAIL_TEMPLATES = [
   {
     title: 'Formal Price Quotation',
-    tierId: 'tier-2',
+    tierId: 'quotes',
     category: 'quote',
     subject: 'Proforma Quotation - Baachko Industrial Packaging',
     body: `Dear [Contact Name],
@@ -77,7 +93,7 @@ Baachko Pvt. Ltd. (Krishna Packers)`
   },
   {
     title: 'Vendor Material Follow-up',
-    tierId: 'tier-3',
+    tierId: 'enquiry',
     category: 'vendor',
     subject: 'Procurement Follow-up: Raw Material Supply & Spot Rates - Baachko',
     body: `Dear Partner / Vendor,
@@ -94,7 +110,7 @@ Baachko Pvt. Ltd. (Krishna Packers)`
   },
   {
     title: 'Technical Specifications Sheet',
-    tierId: 'tier-2',
+    tierId: 'quotes',
     category: 'quote',
     subject: 'Technical Specification Sheet - Baachko Industrial Bags',
     body: `Dear [Contact Name],
@@ -113,7 +129,7 @@ Baachko Pvt. Ltd.`
   },
   {
     title: 'Trial Sample Feedback Follow-up',
-    tierId: 'tier-1',
+    tierId: 'sales',
     category: 'outreach',
     subject: 'Follow-up: Trial Sample Evaluation - Baachko Packaging',
     body: `Dear [Contact Name],
@@ -154,7 +170,7 @@ export default function EmailCenterPage() {
 
   // Compose Modal State
   const [isComposeOpen, setIsComposeOpen] = useState(false);
-  const [composeTierId, setComposeTierId] = useState('tier-2');
+  const [composeTierId, setComposeTierId] = useState('sales');
   const [composeTo, setComposeTo] = useState('');
   const [composeContactName, setComposeContactName] = useState('');
   const [composeCompany, setComposeCompany] = useState('');
@@ -165,7 +181,7 @@ export default function EmailCenterPage() {
   const [composeError, setComposeError] = useState(null);
 
   // Inline Quick Reply State (for active thread)
-  const [replyTierId, setReplyTierId] = useState('tier-2');
+  const [replyTierId, setReplyTierId] = useState('sales');
   const [replyBody, setReplyBody] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [replyAlert, setReplyAlert] = useState(null);
@@ -217,7 +233,7 @@ export default function EmailCenterPage() {
             senderName: senderName,
             senderEmail: senderEmail,
             recipientEmail: recipient,
-            tier: recipient.includes('mail.') ? 'Tier 2 (Transactional)' : (recipient.includes('reach.') ? 'Tier 3 (Vendors)' : 'Tier 1 (Corporate)'),
+            tier: recipient.includes('quotes') ? 'Quotations' : (recipient.includes('karan') ? 'Direct' : (recipient.includes('enquiry') ? 'Enquiries' : 'Sales')),
             subject: item.subject || 'Incoming Mail',
             body: cleanBody,
             timestamp: item.created_at || new Date().toISOString(),
@@ -247,7 +263,7 @@ export default function EmailCenterPage() {
               email: senderEmail,
               phone: '',
               targetSku: '',
-              category: recipient.includes('reach') ? 'vendor' : 'quote',
+              category: recipient.includes('enquiry') ? 'vendor' : 'quote',
               status: 'Received',
               lastUpdated: item.created_at || new Date().toISOString(),
               messages: [newMsg]
@@ -295,7 +311,7 @@ export default function EmailCenterPage() {
                 senderType: 'inbound',
                 senderName: lead.contact_name || 'Customer',
                 senderEmail: lead.email,
-                recipientEmail: 'quotes@mail.baachko.com',
+                recipientEmail: 'quotes@baachko.com',
                 tier: 'Inbound Web RFQ',
                 subject: `Inquiry for ${lead.target_product_sku || 'Industrial Packaging'}`,
                 body: lead.message || `Customer submitted a quotation request on baachko.com for ${lead.target_product_sku || 'Packaging Sacks'}${lead.estimated_qty ? ` (Quantity: ${lead.estimated_qty})` : ''}.`,
@@ -347,9 +363,9 @@ export default function EmailCenterPage() {
   // Keep replyTierId aligned with active thread's category
   useEffect(() => {
     if (activeThread) {
-      if (activeThread.category === 'vendor') setReplyTierId('tier-3');
-      else if (activeThread.category === 'quote') setReplyTierId('tier-2');
-      else setReplyTierId('tier-1');
+      if (activeThread.category === 'vendor') setReplyTierId('enquiry');
+      else if (activeThread.category === 'quote') setReplyTierId('quotes');
+      else setReplyTierId('sales');
     }
   }, [activeThread?.id]);
 
@@ -372,7 +388,7 @@ export default function EmailCenterPage() {
     setIsSendingReply(true);
     setReplyAlert(null);
 
-    const chosenTier = SENDER_TIERS.find(t => t.id === replyTierId) || SENDER_TIERS[0];
+    const chosenTier = getSenderTier(replyTierId);
     const replySubject = `Re: ${activeThread.messages[activeThread.messages.length - 1]?.subject || 'Baachko Industrial Packaging'}`;
 
     try {
@@ -440,7 +456,7 @@ export default function EmailCenterPage() {
 
   // Open Compose Pop-up Modal with clean defaults
   const handleOpenCompose = (prefill = {}) => {
-    setComposeTierId(prefill.tierId || 'tier-2');
+    setComposeTierId(prefill.tierId || 'sales');
     setComposeTo(prefill.to || '');
     setComposeContactName(prefill.contactName || '');
     setComposeCompany(prefill.company || '');
@@ -480,7 +496,7 @@ export default function EmailCenterPage() {
     setIsSendingCompose(true);
     setComposeError(null);
 
-    const chosenTier = SENDER_TIERS.find(t => t.id === composeTierId) || SENDER_TIERS[0];
+    const chosenTier = getSenderTier(composeTierId);
 
     try {
       const res = await fetch('/api/send-email', {
@@ -771,7 +787,7 @@ export default function EmailCenterPage() {
                 {/* Trail Messages */}
                 {activeThread.messages.map((msg, index) => {
                   const isInbound = msg.senderType === 'inbound';
-                  const msgTier = SENDER_TIERS.find(t => t.id === msg.tierId);
+                  const msgTier = getSenderTier(msg.tierId);
 
                   return (
                     <div 
