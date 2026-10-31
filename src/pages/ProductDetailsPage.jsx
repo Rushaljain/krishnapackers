@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import RFQForm from '../components/RFQForm';
-import { Loader2, CheckCircle2, Layers, Weight, Sliders, Shield, Box, Tag } from 'lucide-react';
+import { Loader2, CheckCircle2, Layers, Weight, Sliders, Shield, Box, Tag, ChevronDown } from 'lucide-react';
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
@@ -96,139 +96,121 @@ export default function ProductDetailsPage() {
                   <Tag className="w-3.5 h-3.5 text-amber-700" />
                   SKU: {configuredSku}
                 </span>
-                <span className="text-xs text-gray-400 font-medium hidden sm:inline">
-                  • Configured Live
-                </span>
               </div>
               <h1 className="text-4xl font-extrabold text-gray-900 mb-4">{product.product_name}</h1>
               <p className="text-lg text-gray-600 mb-8">
                 {product.description || `Premium quality ${product.product_name.toLowerCase()} manufactured for heavy-duty industrial handling and optimal product protection.`}
               </p>
               
-              {/* OPTIONS & SPECIFICATIONS SELECTOR */}
-              <div className="space-y-6 mb-8">
+              {/* OPTIONS & SPECIFICATIONS SELECTOR (CLEAN DROPDOWNS) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 
                 {/* Ply Options */}
                 {product.ply_options && product.ply_options.length > 0 && (
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-base">
-                      <Layers className="text-amber-700 w-5 h-5" />
-                      <span>Ply & Construction Options</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {product.ply_options.map((ply) => (
-                        <button
-                          key={ply}
-                          onClick={() => setSelectedPly(ply)}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition border ${
-                            selectedPly === ply
-                              ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
-                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                          }`}
-                        >
-                          {ply}
-                        </button>
-                      ))}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <label className="flex items-center gap-2 mb-2 text-gray-900 font-bold text-sm">
+                      <Layers className="text-amber-700 w-4 h-4" />
+                      <span>Ply & Construction</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedPly}
+                        onChange={(e) => setSelectedPly(e.target.value)}
+                        className="w-full text-sm font-semibold p-2.5 pr-10 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none cursor-pointer appearance-none"
+                      >
+                        {product.ply_options.map((ply) => (
+                          <option key={ply} value={ply}>{ply}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
                 )}
 
                 {/* Weave & Construction Options (e.g. Jute Gunny Bags) */}
                 {product.construction_options && product.construction_options.length > 0 && (
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-base">
-                      <Layers className="text-amber-700 w-5 h-5" />
-                      <span>Weave & Construction Options</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {product.construction_options.map((construction) => (
-                        <button
-                          key={construction}
-                          onClick={() => setSelectedConstruction(construction)}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition border ${
-                            selectedConstruction === construction
-                              ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
-                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                          }`}
-                        >
-                          {construction}
-                        </button>
-                      ))}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <label className="flex items-center gap-2 mb-2 text-gray-900 font-bold text-sm">
+                      <Layers className="text-amber-700 w-4 h-4" />
+                      <span>Weave & Construction</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedConstruction}
+                        onChange={(e) => setSelectedConstruction(e.target.value)}
+                        className="w-full text-sm font-semibold p-2.5 pr-10 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none cursor-pointer appearance-none"
+                      >
+                        {product.construction_options.map((construction) => (
+                          <option key={construction} value={construction}>{construction}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
                 )}
 
                 {/* Material Fabric Options (e.g. PP / HDPE Woven) */}
                 {product.material_options && product.material_options.length > 0 && (
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-base">
-                      <Box className="text-amber-700 w-5 h-5" />
-                      <span>Material Fabric Options</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {product.material_options.map((material) => (
-                        <button
-                          key={material}
-                          onClick={() => setSelectedMaterial(material)}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition border ${
-                            selectedMaterial === material
-                              ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
-                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                          }`}
-                        >
-                          {material}
-                        </button>
-                      ))}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <label className="flex items-center gap-2 mb-2 text-gray-900 font-bold text-sm">
+                      <Box className="text-amber-700 w-4 h-4" />
+                      <span>Material Fabric</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedMaterial}
+                        onChange={(e) => setSelectedMaterial(e.target.value)}
+                        className="w-full text-sm font-semibold p-2.5 pr-10 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none cursor-pointer appearance-none"
+                      >
+                        {product.material_options.map((material) => (
+                          <option key={material} value={material}>{material}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
                 )}
 
                 {/* Lamination / Coating Options */}
                 {product.lamination_options && product.lamination_options.length > 0 && (
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-base">
-                      <Sliders className="text-amber-700 w-5 h-5" />
-                      <span>Lamination & Finish Options</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {product.lamination_options.map((option) => (
-                        <button
-                          key={option}
-                          onClick={() => setSelectedLamination(option)}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition border ${
-                            selectedLamination === option
-                              ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
-                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                          }`}
-                        >
-                          {option}
-                        </button>
-                      ))}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <label className="flex items-center gap-2 mb-2 text-gray-900 font-bold text-sm">
+                      <Sliders className="text-amber-700 w-4 h-4" />
+                      <span>Lamination & Finish</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedLamination}
+                        onChange={(e) => setSelectedLamination(e.target.value)}
+                        className="w-full text-sm font-semibold p-2.5 pr-10 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none cursor-pointer appearance-none"
+                      >
+                        {product.lamination_options.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
                 )}
 
                 {/* Capacity / Weight Options */}
                 {product.capacity_options && product.capacity_options.length > 0 && (
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-2 mb-3 text-gray-900 font-bold text-base">
-                      <Weight className="text-amber-700 w-5 h-5" />
-                      <span>Available Capacities / Weights</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {product.capacity_options.map((cap) => (
-                        <button
-                          key={cap}
-                          onClick={() => setSelectedCapacity(cap)}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition border ${
-                            selectedCapacity === cap
-                              ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
-                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                          }`}
-                        >
-                          {cap}
-                        </button>
-                      ))}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <label className="flex items-center gap-2 mb-2 text-gray-900 font-bold text-sm">
+                      <Weight className="text-amber-700 w-4 h-4" />
+                      <span>Available Capacity / Weight</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedCapacity}
+                        onChange={(e) => setSelectedCapacity(e.target.value)}
+                        className="w-full text-sm font-semibold p-2.5 pr-10 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none cursor-pointer appearance-none"
+                      >
+                        {product.capacity_options.map((cap) => (
+                          <option key={cap} value={cap}>{cap}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
                 )}

@@ -14,41 +14,38 @@ export const SENDER_TIERS = [
   {
     id: 'tier-2',
     tierNumber: 2,
-    name: 'Tier 2: Transactional',
+    name: 'Transactional',
     subdomain: 'mail.baachko.com',
     email: 'quotes@mail.baachko.com',
     fromName: 'Baachko Quotations & Specs',
     role: 'Quotations, Technical Spec Sheets, Sample Confirmations',
     badge: 'Transactional',
     color: 'bg-amber-100 text-amber-900 border-amber-300',
-    dotColor: 'bg-amber-500',
-    description: 'High-speed delivery for customer RFQs & automatic receipts without risking apex domain reputation'
+    dotColor: 'bg-amber-500'
   },
   {
     id: 'tier-1',
     tierNumber: 1,
-    name: 'Tier 1: Corporate Apex',
+    name: 'Corporate',
     subdomain: 'baachko.com',
     email: 'sales@baachko.com',
     fromName: 'Baachko Industrial Packaging',
-    role: 'Executive 1-on-1 Deals, Commercial Contracts & Director Sign-offs',
-    badge: 'Corporate Apex',
+    role: 'Executive Deals & Commercial Inquiries',
+    badge: 'Corporate',
     color: 'bg-purple-100 text-purple-900 border-purple-300',
-    dotColor: 'bg-purple-500',
-    description: 'Direct corporate identity with primary inbox authority for high-value negotiations'
+    dotColor: 'bg-purple-500'
   },
   {
     id: 'tier-3',
     tierNumber: 3,
-    name: 'Tier 3: Outreach & CRM',
+    name: 'Outreach & Vendors',
     subdomain: 'reach.baachko.com',
     email: 'updates@reach.baachko.com',
     fromName: 'Baachko Partner Operations',
-    role: 'Vendor Follow-ups, Supplier Pricing, Re-engagement Campaigns',
-    badge: 'Vendor & CRM',
+    role: 'Vendor Follow-ups & Supplier Pricing',
+    badge: 'Vendors',
     color: 'bg-cyan-100 text-cyan-900 border-cyan-300',
-    dotColor: 'bg-cyan-500',
-    description: 'Isolated subdomain firewalling reputation for cold follow-ups & raw material supplier negotiation'
+    dotColor: 'bg-cyan-500'
   }
 ];
 
@@ -164,7 +161,7 @@ const INITIAL_STARTER_THREADS = [
         senderName: 'Baachko Quotations & Specs',
         senderEmail: 'quotes@mail.baachko.com',
         recipientEmail: 'sheersh.pandey@anandagroup.org',
-        tier: 'Tier 2: Transactional',
+        tier: 'Transactional',
         tierId: 'tier-2',
         subject: 'Proforma Quotation: KP-MWS-001 (3 Ply + Food Grade PE Liner)',
         body: `Dear Sheersh Kumar ji,
@@ -201,7 +198,7 @@ Complimentary trial samples are being dispatched today to your Kanpur QA lab for
         senderName: 'Baachko Partner Operations',
         senderEmail: 'updates@reach.baachko.com',
         recipientEmail: 'procurement@supremepolymers.in',
-        tier: 'Tier 3: Outreach & CRM',
+        tier: 'Outreach & Vendors',
         tierId: 'tier-3',
         subject: 'Inquiry: Supply of 20 MT Polypropylene Raffia Grade Granules',
         body: `Dear Rameshwar ji,
@@ -234,7 +231,7 @@ Baachko Pvt. Ltd.`,
         senderName: 'Baachko Partner Operations',
         senderEmail: 'updates@reach.baachko.com',
         recipientEmail: 'procurement@supremepolymers.in',
-        tier: 'Tier 3: Outreach & CRM',
+        tier: 'Outreach & Vendors',
         tierId: 'tier-3',
         subject: 'Vendor Follow-up: Rate Negotiation for 20 MT Lot',
         body: `Dear Rameshwar ji,
@@ -603,7 +600,7 @@ export default function EmailCenterPage() {
       {/* ==================================================== */}
       <div className="bg-white rounded-2xl p-4 shadow-2xs border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         
-        {/* Left: Branding & Tier Guide Pill */}
+        {/* Left: Branding & Action */}
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => handleOpenCompose()}
@@ -611,21 +608,6 @@ export default function EmailCenterPage() {
           >
             <Plus size={18} /> Compose New Email
           </button>
-
-          <div className="hidden lg:flex items-center gap-2 text-xs bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-            <span className="font-bold text-slate-700 flex items-center gap-1">
-              <ShieldCheck size={14} className="text-amber-700" /> 3-Tier Domain Isolation:
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-              Tier 1: Corporate
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-              Tier 2: Transactional
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-cyan-100 text-cyan-800 border border-cyan-200">
-              Tier 3: Outreach & CRM
-            </span>
-          </div>
         </div>
 
         {/* Right: Search Input & Sync */}
@@ -671,31 +653,21 @@ export default function EmailCenterPage() {
           isMobileViewingThread ? 'hidden md:flex' : 'flex'
         }`}>
           
-          {/* Category Tabs */}
-          <div className="p-3 border-b border-gray-100 flex items-center justify-between gap-1 overflow-x-auto text-xs font-semibold text-gray-600 bg-gray-50/60">
-            {[
-              { id: 'all', label: 'All Mails', count: threads.length },
-              { id: 'quotes', label: 'Quotes / RFQs', count: threads.filter(t => t.category === 'quote').length },
-              { id: 'vendors', label: 'Vendor Follow-ups', count: threads.filter(t => t.category === 'vendor').length },
-              { id: 'outreach', label: 'Outreach', count: threads.filter(t => t.category === 'outreach').length },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-2.5 py-1.5 rounded-lg transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === tab.id 
-                    ? 'bg-amber-700 text-white font-bold shadow-2xs' 
-                    : 'hover:bg-gray-200/70 text-gray-600'
-                }`}
+          {/* Category Dropdown Filter */}
+          <div className="p-3 border-b border-gray-100 bg-gray-50/60">
+            <div className="relative">
+              <select
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value)}
+                className="w-full text-xs font-bold py-2.5 px-3 pr-8 rounded-xl border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer appearance-none shadow-2xs"
               >
-                <span>{tab.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  activeTab === tab.id ? 'bg-amber-900/40 text-white' : 'bg-gray-200 text-gray-700'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
+                <option value="all">All Mails ({threads.length})</option>
+                <option value="quotes">Quotes & RFQs ({threads.filter(t => t.category === 'quote').length})</option>
+                <option value="vendors">Vendor Follow-ups ({threads.filter(t => t.category === 'vendor').length})</option>
+                <option value="outreach">Outreach ({threads.filter(t => t.category === 'outreach').length})</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+            </div>
           </div>
 
           {/* Email Conversation Threads List */}
@@ -936,48 +908,55 @@ export default function EmailCenterPage() {
               <div className="p-4 sm:p-5 bg-white border-t border-gray-200 shrink-0 shadow-lg">
                 <form onSubmit={handleSendReply} className="space-y-3">
                   
-                  {/* Reply Controls: 3-Tier Selector & Quick Templates */}
+                  {/* Reply Controls: Sender Dropdown & Template Dropdown */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     
-                    {/* The 3-Tier Domain Selector Dropdown */}
+                    {/* From Dropdown */}
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1">
-                        <Reply size={13} className="text-amber-700" /> Send From:
+                        <Reply size={13} className="text-amber-700" /> From:
                       </span>
                       
                       <div className="relative">
                         <select
                           value={replyTierId}
                           onChange={(e) => setReplyTierId(e.target.value)}
-                          className="text-xs font-bold px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-8"
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-8"
                         >
                           {SENDER_TIERS.map(tier => (
                             <option key={tier.id} value={tier.id}>
-                              {tier.name} — {tier.email}
+                              {tier.email} ({tier.name})
                             </option>
                           ))}
                         </select>
-                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-amber-800 pointer-events-none" />
+                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                       </div>
                     </div>
 
-                    {/* Quick Template Pills */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 sm:pb-0">
-                      <span className="text-[11px] text-gray-400 font-semibold whitespace-nowrap">Templates:</span>
-                      {EMAIL_TEMPLATES.map((tmpl, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleApplyTemplateToReply(tmpl)}
-                          className="text-[11px] font-medium px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition whitespace-nowrap cursor-pointer"
+                    {/* Template Dropdown */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Template:</span>
+                      <div className="relative">
+                        <select
+                          onChange={(e) => {
+                            const tmpl = EMAIL_TEMPLATES.find(t => t.title === e.target.value);
+                            if (tmpl) handleApplyTemplateToReply(tmpl);
+                            e.target.value = '';
+                          }}
+                          defaultValue=""
+                          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-700 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-8"
                         >
-                          {tmpl.title}
-                        </button>
-                      ))}
+                          <option value="" disabled>Choose a template...</option>
+                          {EMAIL_TEMPLATES.map((tmpl, idx) => (
+                            <option key={idx} value={tmpl.title}>{tmpl.title}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Active Sender Subdomain Notice */}
+                  {/* Active Sender Notice */}
                   {(() => {
                     const currentTier = SENDER_TIERS.find(t => t.id === replyTierId) || SENDER_TIERS[0];
                     return (
@@ -985,9 +964,6 @@ export default function EmailCenterPage() {
                         <span className={`w-2 h-2 rounded-full ${currentTier.dotColor}`}></span>
                         <span>
                           Sending as <strong>{currentTier.fromName}</strong> &lt;{currentTier.email}&gt;
-                        </span>
-                        <span className="hidden sm:inline text-gray-400">
-                          • {currentTier.description}
                         </span>
                       </div>
                     );
@@ -1011,17 +987,13 @@ export default function EmailCenterPage() {
                       rows={3}
                       value={replyBody}
                       onChange={(e) => setReplyBody(e.target.value)}
-                      placeholder={`Type your reply or vendor follow-up to ${activeThread.contactName}... (Maintains chronological trail)`}
+                      placeholder={`Type your reply to ${activeThread.contactName}...`}
                       className="w-full text-xs sm:text-sm p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none leading-relaxed font-sans"
                       required
                     />
                   </div>
 
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] text-gray-400">
-                      Replies automatically append to this contact's audit trail.
-                    </span>
-
+                  <div className="flex justify-end items-center">
                     <button
                       type="submit"
                       disabled={isSendingReply || !replyBody.trim()}
@@ -1085,28 +1057,25 @@ export default function EmailCenterPage() {
                 </div>
               )}
 
-              {/* 3-Tier Sender Architecture Dropdown */}
-              <div className="bg-amber-50/70 border border-amber-200 p-3 rounded-xl space-y-1.5">
-                <label className="block text-xs font-bold text-amber-900 uppercase tracking-wider">
-                  The 3-Tier Domain Architecture (Sender Identity) *
+              {/* From Address Dropdown */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  From Address *
                 </label>
                 <div className="relative">
                   <select
                     value={composeTierId}
                     onChange={(e) => setComposeTierId(e.target.value)}
-                    className="w-full text-xs sm:text-sm font-bold px-3 py-2 rounded-lg border border-amber-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 outline-none pr-8 cursor-pointer"
+                    className="w-full text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 outline-none pr-8 cursor-pointer"
                   >
                     {SENDER_TIERS.map(tier => (
                       <option key={tier.id} value={tier.id}>
-                        {tier.name} — {tier.email} ({tier.badge})
+                        {tier.email} ({tier.fromName})
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-800 pointer-events-none" />
+                  <ChevronDown size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                 </div>
-                <p className="text-[11px] text-amber-800/80">
-                  {SENDER_TIERS.find(t => t.id === composeTierId)?.description}
-                </p>
               </div>
 
               {/* Recipient Details */}
@@ -1155,7 +1124,7 @@ export default function EmailCenterPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Trail Category
+                    Category
                   </label>
                   <select
                     value={composeCategory}
@@ -1184,29 +1153,32 @@ export default function EmailCenterPage() {
                 />
               </div>
 
-              {/* Quick Template Bar */}
+              {/* Message Body with Template Dropdown */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                     Message Body *
                   </label>
-                  <div className="flex items-center gap-1 text-[11px] text-gray-400">
-                    <Sparkles size={12} className="text-amber-600" />
-                    <span>Insert Template:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 font-medium">Template:</span>
+                    <div className="relative">
+                      <select
+                        onChange={(e) => {
+                          const tmpl = EMAIL_TEMPLATES.find(t => t.title === e.target.value);
+                          if (tmpl) handleApplyTemplateToCompose(tmpl);
+                          e.target.value = '';
+                        }}
+                        defaultValue=""
+                        className="text-xs font-medium px-2.5 py-1 rounded-lg border border-gray-300 bg-white text-gray-700 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer pr-7"
+                      >
+                        <option value="" disabled>Choose a template...</option>
+                        {EMAIL_TEMPLATES.map((tmpl, idx) => (
+                          <option key={idx} value={tmpl.title}>{tmpl.title}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2">
-                  {EMAIL_TEMPLATES.map((tmpl, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleApplyTemplateToCompose(tmpl)}
-                      className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition whitespace-nowrap cursor-pointer"
-                    >
-                      {tmpl.title}
-                    </button>
-                  ))}
                 </div>
 
                 <textarea 

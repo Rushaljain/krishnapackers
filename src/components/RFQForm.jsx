@@ -149,14 +149,7 @@ export default function RFQForm({ productSku, productName }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">Target Product SKU</label>
-              {productSku && (
-                <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                  Auto-syncs with options
-                </span>
-              )}
-            </div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Target Product SKU</label>
             <input 
               type="text" 
               name="target_product_sku"
