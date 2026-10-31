@@ -85,20 +85,12 @@ export default function AdminLayout() {
         }`}
       >
         <div className="w-64 flex flex-col h-full">
-          {/* Sidebar Header with Brand and Toggle */}
-          <div className="p-5 border-b border-gray-700 flex items-center justify-between">
+          {/* Sidebar Header with Brand */}
+          <div className="p-5 border-b border-gray-700 flex items-center">
             <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition" target="_blank" title="View live website">
               <Package className="text-amber-500 shrink-0" />
               <span className="font-bold text-lg tracking-tight">ERP Admin</span>
             </Link>
-            <button
-              onClick={toggleSidebar}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
-              title="Collapse sidebar"
-              aria-label="Collapse sidebar"
-            >
-              <Menu size={20} />
-            </button>
           </div>
           
           {/* Navigation Links */}
