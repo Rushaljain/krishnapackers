@@ -1342,40 +1342,8 @@ export default function EmailCenterPage() {
             </button>
           </div>
 
-          {/* Right: Star Mails Toggle & Compose New Email */}
-          <div className="flex items-center justify-end gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                if (activeTab === 'starred' || isStarredFilterActive) {
-                  setActiveTab('all');
-                  setIsStarredFilterActive(false);
-                } else {
-                  setActiveTab('starred');
-                  setIsStarredFilterActive(true);
-                }
-              }}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition cursor-pointer ${
-                isStarredFilterActive || activeTab === 'starred'
-                  ? 'bg-amber-100 text-amber-900 border-amber-400 ring-2 ring-amber-400/20 shadow-xs'
-                  : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200'
-              }`}
-              title={isStarredFilterActive || activeTab === 'starred' ? "Showing only starred emails (Click to show all)" : "Filter by starred emails"}
-            >
-              <Star 
-                size={15} 
-                className={isStarredFilterActive || activeTab === 'starred' ? 'text-amber-500 fill-amber-400' : 'text-gray-400'} 
-              />
-              <span>Star Mails</span>
-              {starredCount > 0 && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                  isStarredFilterActive || activeTab === 'starred' ? 'bg-amber-200 text-amber-900' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {starredCount}
-                </span>
-              )}
-            </button>
-
+          {/* Right: Compose New Email */}
+          <div className="flex items-center justify-end shrink-0">
             <button
               onClick={() => handleOpenCompose()}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs sm:text-sm rounded-lg shadow-xs transition hover:shadow-sm cursor-pointer"
@@ -1501,23 +1469,18 @@ export default function EmailCenterPage() {
         }`}>
           
           {/* Category Dropdown Filter */}
-          <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between gap-2">
-            <div className="relative flex-1">
+          <div className="px-3.5 py-2.5 border-b border-gray-100 bg-gray-50/50">
+            <div className="relative w-full">
               <select
-                value={isBinView ? 'bin' : activeTab}
+                value={activeTab}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val === 'bin') {
-                    setSearchParams({ view: 'bin' });
-                    setActiveTab('bin');
-                  } else {
-                    setSearchParams({});
-                    setActiveTab(val);
-                    if (val === 'starred') {
-                      setIsStarredFilterActive(true);
-                    } else if (isStarredFilterActive) {
-                      setIsStarredFilterActive(false);
-                    }
+                  setSearchParams({});
+                  setActiveTab(val);
+                  if (val === 'starred') {
+                    setIsStarredFilterActive(true);
+                  } else if (isStarredFilterActive) {
+                    setIsStarredFilterActive(false);
                   }
                 }}
                 className="w-full text-xs font-semibold py-1.5 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none cursor-pointer appearance-none"
@@ -1527,16 +1490,9 @@ export default function EmailCenterPage() {
                 <option value="received">Received ({receivedCount})</option>
                 <option value="starred">Starred ({starredCount})</option>
                 <option value="enquiries">Enquiries ({enquiriesCount})</option>
-                <option value="quotes">Quotes & RFQs ({activeThreads.filter(t => t.category === 'quote').length})</option>
-                <option value="vendors">Vendor Follow-ups ({activeThreads.filter(t => t.category === 'vendor').length})</option>
-                <option value="outreach">Outreach ({activeThreads.filter(t => t.category === 'outreach').length})</option>
-                <option value="bin">Mail Bin / Trash ({binThreads.length})</option>
               </select>
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             </div>
-            <span className="text-[11px] font-medium text-gray-400 shrink-0">
-              {filteredThreads.length} items
-            </span>
           </div>
 
           {/* Bin Mode Notice in Left Pane */}

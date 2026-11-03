@@ -187,11 +187,8 @@ export default function AdminLayout() {
             </Link>
           </div>
 
-          {/* Footer User Info & Sign Out */}
+          {/* Footer Sign Out */}
           <div className="p-4 border-t border-gray-700 mt-auto">
-            <div className="flex items-center gap-3 px-4 py-3 text-sm text-gray-400 mb-2">
-              <div className="truncate">{session.user.email}</div>
-            </div>
             <button
               onClick={handleLogout}
               className="flex w-full items-center gap-3 px-4 py-3 text-red-400 hover:bg-white/10 hover:text-red-300 rounded-lg transition cursor-pointer"
