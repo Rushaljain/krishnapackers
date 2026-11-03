@@ -809,8 +809,38 @@ export default function EmailCenterPage() {
         subject: replySubject,
         body: replyBody.trim(),
         timestamp: new Date().toISOString(),
-        status: 'Delivered'
+        status: 'Delivered',
+        attachments: replyAttachments.map(a => ({
+          name: a.name,
+          size: a.size,
+          type: a.type,
+          url: a.dataUrl
+        }))
       };
+
+      // Sync sent outbound lead update to Supabase
+      try {
+        if (isDifferentEmail) {
+          await supabase.from('rfq_leads').insert([
+            {
+              contact_name: targetEmail.split('@')[0],
+              company_name: targetEmail.split('@')[1] || 'Direct Client',
+              email: targetEmail.toLowerCase(),
+              phone: '',
+              target_product_sku: replySubject,
+              status: 'Contacted',
+              message: replyBody.trim()
+            }
+          ]);
+        } else {
+          await supabase
+            .from('rfq_leads')
+            .update({ status: 'Contacted' })
+            .ilike('email', targetEmail.toLowerCase());
+        }
+      } catch (supaErr) {
+        console.warn('Could not update Supabase for sent reply:', supaErr);
+      }
 
       if (isDifferentEmail) {
         // Different email address chosen -> start a new conversation for this email ("the new mail goes in")
@@ -935,6 +965,45 @@ export default function EmailCenterPage() {
         throw new Error(data.error || 'Failed to dispatch email via Resend.');
       }
 
+      // Define newMessage for newly composed outbound email
+      const newMessage = {
+        id: `msg-${Date.now()}`,
+        senderType: 'outbound',
+        senderName: chosenTier.fromName,
+        senderEmail: chosenTier.email,
+        recipientEmail: composeTo.trim(),
+        cc: parsedComposeCc.length > 0 ? parsedComposeCc : undefined,
+        tier: chosenTier.name,
+        tierId: chosenTier.id,
+        subject: composeSubject.trim(),
+        body: composeBody.trim(),
+        timestamp: new Date().toISOString(),
+        status: 'Delivered',
+        attachments: composeAttachments.map(a => ({
+          name: a.name,
+          size: a.size,
+          type: a.type,
+          url: a.dataUrl
+        }))
+      };
+
+      // Sync new conversation / lead to Supabase rfq_leads
+      try {
+        await supabase.from('rfq_leads').insert([
+          {
+            contact_name: composeContactName.trim() || composeTo.split('@')[0],
+            company_name: composeCompany.trim() || (composeCategory === 'vendor' ? 'Supplier / Vendor' : 'Direct Client'),
+            email: composeTo.trim().toLowerCase(),
+            phone: '',
+            target_product_sku: composeSubject.trim() || 'Direct Inquiry',
+            status: 'Contacted',
+            message: composeBody.trim()
+          }
+        ]);
+      } catch (supaErr) {
+        console.warn('Could not sync new composed email to Supabase:', supaErr);
+      }
+
       // ALWAYS create a distinct new conversation thread for Compose New Email
       const newThreadId = `thread-${Date.now()}`;
       const newThread = {
@@ -959,6 +1028,18 @@ export default function EmailCenterPage() {
       setSenderFilter(chosenTier.id);
       setReplyTierId(chosenTier.id);
 
+      // Sent acknowledgement notification
+      setReplyAlert({
+        type: 'success',
+        text: `Email successfully sent to ${composeTo.trim()} via ${chosenTier.email}`
+      });
+
+      // Clear compose modal fields
+      setComposeTo('');
+      setComposeContactName('');
+      setComposeCc('');
+      setComposeSubject('');
+      setComposeBody('');
       setComposeAttachments([]);
       if (composeFileInputRef.current) composeFileInputRef.current.value = '';
       setIsComposeOpen(false);
