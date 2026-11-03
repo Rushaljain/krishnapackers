@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Search, Filter, Download, Mail, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Search, Download, Mail, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import SendEmailModal from '../../components/admin/SendEmailModal';
 
 export default function LeadsPage() {
@@ -10,6 +10,7 @@ export default function LeadsPage() {
   const [selectedLeadForEmail, setSelectedLeadForEmail] = useState(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [expandedLeadIds, setExpandedLeadIds] = useState({});
+  const [statusFilter, setStatusFilter] = useState('All');
 
   const toggleExpandLead = (id) => {
     setExpandedLeadIds(prev => ({
@@ -74,13 +75,14 @@ export default function LeadsPage() {
   };
 
   const exportToCSV = () => {
-    if (leads.length === 0) return;
+    const dataToExport = filteredLeads.length > 0 ? filteredLeads : leads;
+    if (dataToExport.length === 0) return;
     
     const headers = ['Date', 'Name', 'Company', 'Email', 'Phone', 'Target SKU', 'Estimated Qty', 'Message', 'Status'];
     
     const csvContent = [
       headers.join(','),
-      ...leads.map(lead => [
+      ...dataToExport.map(lead => [
         new Date(lead.created_at).toLocaleDateString(),
         `"${(lead.contact_name || '').replace(/"/g, '""')}"`,
         `"${(lead.company_name || '').replace(/"/g, '""')}"`,
@@ -104,11 +106,20 @@ export default function LeadsPage() {
     document.body.removeChild(link);
   };
 
-  const filteredLeads = leads.filter(lead => 
-    (lead.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
-    (lead.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
-    (lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) || '')
-  );
+  const filteredLeads = leads.filter(lead => {
+    const matchesSearch = 
+      (lead.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
+      (lead.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
+      (lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
+      (lead.phone?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
+      (lead.target_product_sku?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
+      (lead.message?.toLowerCase().includes(searchTerm.toLowerCase()) || '');
+
+    const currentStatus = lead.status || 'New';
+    const matchesStatus = statusFilter === 'All' || currentStatus.toLowerCase() === statusFilter.toLowerCase();
+
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -142,14 +153,10 @@ export default function LeadsPage() {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
           />
         </div>
-        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Filter size={18} />
-            <span>Showing {filteredLeads.length} leads</span>
-          </div>
+        <div>
           <button 
             onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-lg transition cursor-pointer"
           >
             <Download size={16} />
             Export CSV
@@ -166,7 +173,22 @@ export default function LeadsPage() {
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requirements</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th scope="col" className="px-6 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-2">
+                    <span>Status</span>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="normal-case tracking-normal text-xs font-semibold px-2.5 py-1 rounded-md border border-gray-300 bg-white hover:border-amber-500 text-gray-700 shadow-2xs focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
+                      title="Filter leads by status"
+                    >
+                      <option value="All">All</option>
+                      <option value="New">New</option>
+                      <option value="Contacted">Contacted</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </div>
+                </th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -264,7 +286,7 @@ export default function LeadsPage() {
               {filteredLeads.length === 0 && (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
-                    No leads found matching your search.
+                    No leads found matching your search or filter.
                   </td>
                 </tr>
               )}
