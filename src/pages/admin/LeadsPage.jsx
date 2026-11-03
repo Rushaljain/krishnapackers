@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Search, Filter, Download, Mail, Trash2 } from 'lucide-react';
+import { Loader2, Search, Filter, Download, Mail, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import SendEmailModal from '../../components/admin/SendEmailModal';
 
 export default function LeadsPage() {
@@ -9,6 +9,14 @@ export default function LeadsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLeadForEmail, setSelectedLeadForEmail] = useState(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [expandedLeadIds, setExpandedLeadIds] = useState({});
+
+  const toggleExpandLead = (id) => {
+    setExpandedLeadIds(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   useEffect(() => {
     fetchLeads();
@@ -185,10 +193,37 @@ export default function LeadsPage() {
                         Qty: {lead.estimated_qty}
                       </div>
                     )}
-                    {lead.message && (
-                      <div className="text-sm text-gray-500 mt-2 line-clamp-2 max-w-xs" title={lead.message}>
-                        "{lead.message}"
+                    {lead.message ? (
+                      <div className={`mt-1.5 flex items-start gap-2 ${expandedLeadIds[lead.id] ? 'max-w-md' : 'max-w-xs'}`}>
+                        <div 
+                          onClick={() => toggleExpandLead(lead.id)}
+                          className={`text-sm flex-1 cursor-pointer transition-all ${
+                            expandedLeadIds[lead.id]
+                              ? 'text-gray-900 whitespace-pre-wrap bg-amber-50/70 p-2.5 rounded-lg border border-amber-200/80 shadow-xs'
+                              : 'text-gray-500 line-clamp-2'
+                          }`}
+                          title={!expandedLeadIds[lead.id] ? lead.message : "Click to collapse"}
+                        >
+                          "{lead.message}"
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleExpandLead(lead.id)}
+                          className="p-1 rounded-md border border-gray-300 hover:border-amber-500 bg-white hover:bg-amber-50 text-gray-600 hover:text-amber-800 shadow-2xs transition-all cursor-pointer shrink-0 mt-0.5"
+                          title={expandedLeadIds[lead.id] ? "Collapse requirement" : "Show entire requirement"}
+                          aria-label={expandedLeadIds[lead.id] ? "Collapse requirement" : "Show entire requirement"}
+                        >
+                          {expandedLeadIds[lead.id] ? (
+                            <ChevronUp size={16} className="text-amber-700" />
+                          ) : (
+                            <ChevronDown size={16} />
+                          )}
+                        </button>
                       </div>
+                    ) : (
+                      !lead.target_product_sku && !lead.estimated_qty && (
+                        <span className="text-sm text-gray-400 italic">-</span>
+                      )
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
