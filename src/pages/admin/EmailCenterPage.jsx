@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Mail, Send, CheckCircle2, AlertCircle, Loader2, Check, Clock, 
   Plus, Search, Filter, ChevronDown, User, Building, Paperclip, 
   Reply, ArrowRight, X, Sparkles, Tag, ShieldCheck, CornerDownRight, 
-  RefreshCw, FileText, MoreVertical, Inbox, SendHorizonal, ArrowLeft
+  RefreshCw, FileText, MoreVertical, Inbox, SendHorizonal, ArrowLeft,
+  Star, Trash2, RotateCcw
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -255,6 +257,9 @@ export default function EmailCenterPage() {
             })
             .map(t => ({
               ...t,
+              isStarred: Boolean(t.isStarred),
+              isDeleted: Boolean(t.isDeleted),
+              deletedAt: t.deletedAt || null,
               messages: Array.isArray(t.messages) ? t.messages : []
             }));
         }
@@ -265,10 +270,22 @@ export default function EmailCenterPage() {
 
   const [selectedThreadId, setSelectedThreadId] = useState(null);
 
-  // UI Navigation states
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'quotes' | 'vendors' | 'outreach'
+  // URL Search Params & Bin View
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => (searchParams.get('view') === 'bin' ? 'bin' : 'all'));
+  const isBinView = searchParams.get('view') === 'bin' || activeTab === 'bin';
+  const [isStarredFilterActive, setIsStarredFilterActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileViewingThread, setIsMobileViewingThread] = useState(false);
+
+  // Synchronize Tab with URL search params (e.g. clicking Mail Bin in sidebar)
+  useEffect(() => {
+    if (searchParams.get('view') === 'bin') {
+      setActiveTab('bin');
+    } else if (activeTab === 'bin') {
+      setActiveTab('all');
+    }
+  }, [searchParams]);
 
   // Compose Modal State
   const [isComposeOpen, setIsComposeOpen] = useState(false);
@@ -404,6 +421,9 @@ export default function EmailCenterPage() {
               subject: item.subject || 'Incoming Inquiry',
               category: recipient.includes('enquiry') ? 'vendor' : 'quote',
               status: 'New',
+              isStarred: false,
+              isDeleted: false,
+              deletedAt: null,
               lastUpdated: item.created_at || new Date().toISOString(),
               messages: [newMsg]
             });
@@ -447,6 +467,9 @@ export default function EmailCenterPage() {
             targetSku: lead.target_product_sku || '',
             category: 'quote',
             status: lead.status || 'New',
+            isStarred: false,
+            isDeleted: false,
+            deletedAt: null,
             lastUpdated: lead.created_at || new Date().toISOString(),
             messages: [
               {
@@ -475,13 +498,70 @@ export default function EmailCenterPage() {
     }
   };
 
+  // Star, Bin, and Restore Action Handlers
+  const handleToggleStar = (threadId, e) => {
+    if (e) e.stopPropagation();
+    setThreads(prev => prev.map(t => {
+      if (t.id === threadId) {
+        return { ...t, isStarred: !t.isStarred };
+      }
+      return t;
+    }));
+  };
+
+  const handleMoveToBin = (threadId, e) => {
+    if (e) e.stopPropagation();
+    setThreads(prev => prev.map(t => {
+      if (t.id === threadId) {
+        return { ...t, isDeleted: true, deletedAt: new Date().toISOString() };
+      }
+      return t;
+    }));
+  };
+
+  const handleRestoreFromBin = (threadId, e) => {
+    if (e) e.stopPropagation();
+    setThreads(prev => prev.map(t => {
+      if (t.id === threadId) {
+        return { ...t, isDeleted: false, deletedAt: null };
+      }
+      return t;
+    }));
+  };
+
+  const handlePermanentlyDelete = (threadId, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm("Are you sure you want to permanently delete this conversation? This action cannot be undone.")) {
+      return;
+    }
+    setThreads(prev => prev.filter(t => t.id !== threadId));
+    if (selectedThreadId === threadId) {
+      setSelectedThreadId(null);
+    }
+  };
+
+  // Filtered thread pools
+  const activeThreads = useMemo(() => threads.filter(t => !t.isDeleted), [threads]);
+  const binThreads = useMemo(() => threads.filter(t => Boolean(t.isDeleted)), [threads]);
+  const starredCount = useMemo(() => activeThreads.filter(t => t.isStarred).length, [activeThreads]);
+
   // Filtered Threads
   const filteredThreads = useMemo(() => {
-    return threads.filter(thread => {
+    const baseList = isBinView ? binThreads : activeThreads;
+
+    return baseList.filter(thread => {
+      // Star toggle filter
+      if (!isBinView && isStarredFilterActive && !thread.isStarred) {
+        return false;
+      }
+
       // Tab filter
-      if (activeTab === 'quotes' && thread.category !== 'quote') return false;
-      if (activeTab === 'vendors' && thread.category !== 'vendor') return false;
-      if (activeTab === 'outreach' && thread.category !== 'outreach') return false;
+      if (!isBinView) {
+        if (activeTab === 'quotes' && thread.category !== 'quote') return false;
+        if (activeTab === 'vendors' && thread.category !== 'vendor') return false;
+        if (activeTab === 'outreach' && thread.category !== 'outreach') return false;
+        if (activeTab === 'starred' && !thread.isStarred) return false;
+      }
 
       // Search filter
       if (searchQuery.trim()) {
@@ -495,13 +575,14 @@ export default function EmailCenterPage() {
       }
       return true;
     });
-  }, [threads, activeTab, searchQuery]);
+  }, [activeThreads, binThreads, isBinView, isStarredFilterActive, activeTab, searchQuery]);
 
   // Currently active thread (null if no conversations)
   const activeThread = useMemo(() => {
-    if (threads.length === 0) return null;
-    return threads.find(t => t.id === selectedThreadId) || filteredThreads[0] || threads[0] || null;
-  }, [threads, selectedThreadId, filteredThreads]);
+    const currentPool = isBinView ? binThreads : activeThreads;
+    if (currentPool.length === 0) return null;
+    return currentPool.find(t => t.id === selectedThreadId) || filteredThreads[0] || currentPool[0] || null;
+  }, [activeThreads, binThreads, isBinView, selectedThreadId, filteredThreads]);
 
   // Keep replyTierId & senderFilter aligned with active thread's category & latest message
   useEffect(() => {
@@ -729,6 +810,9 @@ export default function EmailCenterPage() {
         subject: composeSubject.trim(),
         category: composeCategory,
         status: composeCategory === 'vendor' ? 'In Follow-up' : 'Quoted',
+        isStarred: false,
+        isDeleted: false,
+        deletedAt: null,
         lastUpdated: new Date().toISOString(),
         messages: [newMessage]
       };
@@ -787,8 +871,32 @@ export default function EmailCenterPage() {
           </button>
         </div>
 
-        {/* Right: Compose New Email (Swapped to Right) */}
-        <div className="flex items-center justify-end shrink-0">
+        {/* Right: Star Mails Toggle & Compose New Email */}
+        <div className="flex items-center justify-end gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsStarredFilterActive(prev => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition cursor-pointer ${
+              isStarredFilterActive
+                ? 'bg-amber-100 text-amber-900 border-amber-400 ring-2 ring-amber-400/20 shadow-xs'
+                : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200'
+            }`}
+            title={isStarredFilterActive ? "Showing only starred emails (Click to show all)" : "Filter by starred emails"}
+          >
+            <Star 
+              size={15} 
+              className={isStarredFilterActive ? 'text-amber-500 fill-amber-400' : 'text-gray-400'} 
+            />
+            <span>Star Mails</span>
+            {starredCount > 0 && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                isStarredFilterActive ? 'bg-amber-200 text-amber-900' : 'bg-gray-100 text-gray-600'
+              }`}>
+                {starredCount}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => handleOpenCompose()}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs sm:text-sm rounded-lg shadow-xs transition hover:shadow-sm cursor-pointer"
@@ -814,14 +922,24 @@ export default function EmailCenterPage() {
           <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between gap-2">
             <div className="relative flex-1">
               <select
-                value={activeTab}
-                onChange={(e) => setActiveTab(e.target.value)}
+                value={isBinView ? 'bin' : activeTab}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'bin') {
+                    setSearchParams({ view: 'bin' });
+                    setActiveTab('bin');
+                  } else {
+                    setSearchParams({});
+                    setActiveTab(val);
+                  }
+                }}
                 className="w-full text-xs font-semibold py-1.5 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none cursor-pointer appearance-none"
               >
-                <option value="all">All Mails ({threads.length})</option>
-                <option value="quotes">Quotes & RFQs ({threads.filter(t => t.category === 'quote').length})</option>
-                <option value="vendors">Vendor Follow-ups ({threads.filter(t => t.category === 'vendor').length})</option>
-                <option value="outreach">Outreach ({threads.filter(t => t.category === 'outreach').length})</option>
+                <option value="all">All Mails ({activeThreads.length})</option>
+                <option value="quotes">Quotes & RFQs ({activeThreads.filter(t => t.category === 'quote').length})</option>
+                <option value="vendors">Vendor Follow-ups ({activeThreads.filter(t => t.category === 'vendor').length})</option>
+                <option value="outreach">Outreach ({activeThreads.filter(t => t.category === 'outreach').length})</option>
+                <option value="bin">Mail Bin / Trash ({binThreads.length})</option>
               </select>
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             </div>
@@ -830,15 +948,62 @@ export default function EmailCenterPage() {
             </span>
           </div>
 
+          {/* Bin Mode Notice in Left Pane */}
+          {isBinView && (
+            <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-xs text-amber-900">
+              <span className="font-semibold flex items-center gap-1.5">
+                <Trash2 size={13} className="text-amber-700" />
+                Mail Bin ({binThreads.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchParams({});
+                  setActiveTab('all');
+                }}
+                className="text-[11px] font-bold text-amber-800 hover:underline cursor-pointer"
+              >
+                ← Back to Inbox
+              </button>
+            </div>
+          )}
+
           {/* Email Conversation Threads List */}
           <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
             {filteredThreads.length === 0 ? (
               <div className="p-8 text-center text-gray-400">
-                <Inbox size={36} className="mx-auto mb-2 text-gray-300" />
-                <p className="text-sm font-semibold text-gray-700">No conversations yet</p>
-                <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
-                  Inquiries from the website will appear here automatically, or click "Compose New Email" to send an email.
-                </p>
+                {isBinView ? (
+                  <>
+                    <Trash2 size={36} className="mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm font-semibold text-gray-700">Mail Bin is empty</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                      Deleted conversations will appear here. You can restore them to your active inbox at any time.
+                    </p>
+                  </>
+                ) : isStarredFilterActive ? (
+                  <>
+                    <Star size={36} className="mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm font-semibold text-gray-700">No starred emails</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                      Click the star icon on any conversation card to keep track of important emails.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsStarredFilterActive(false)}
+                      className="mt-3 text-xs font-semibold text-amber-700 hover:underline cursor-pointer"
+                    >
+                      Show all emails
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Inbox size={36} className="mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm font-semibold text-gray-700">No conversations yet</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                      Inquiries from the website will appear here automatically, or click "Compose New Email" to send an email.
+                    </p>
+                  </>
+                )}
               </div>
             ) : (
               filteredThreads.map((thread) => {
@@ -871,21 +1036,11 @@ export default function EmailCenterPage() {
                     </div>
 
                     {/* Thread Details */}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pr-1">
                       <div className="flex items-center justify-between mb-0.5">
                         <span className={`font-bold text-sm truncate ${isSelected ? 'text-amber-900' : 'text-gray-900'}`}>
                           {thread.contactName}
                         </span>
-                        <div className="flex items-center gap-1.5 shrink-0 text-gray-400">
-                          <span className="text-[11px] font-medium">
-                            {new Date(thread.lastUpdated || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                          </span>
-                          {msgCount > 1 && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-600">
-                              {msgCount}
-                            </span>
-                          )}
-                        </div>
                       </div>
 
                       <div className="text-xs text-gray-500 font-medium truncate mb-0.5">
@@ -898,6 +1053,73 @@ export default function EmailCenterPage() {
 
                       <div className="text-xs text-gray-400 line-clamp-1 leading-relaxed">
                         {cleanEmailBody(lastMsg?.body || 'No message content yet.')}
+                      </div>
+                    </div>
+
+                    {/* Right Column: Date, Badge, and Action Buttons (The red box in user screenshot) */}
+                    <div className="flex flex-col items-end justify-between self-stretch shrink-0 gap-1.5 pl-1">
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <span className="text-[11px] font-medium">
+                          {new Date(thread.lastUpdated || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        </span>
+                        {msgCount > 1 && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-600">
+                            {msgCount}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Action buttons (The area indicated in user's red box) */}
+                      <div className="flex items-center gap-1 mt-auto">
+                        {!isBinView ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => handleToggleStar(thread.id, e)}
+                              className={`p-1 rounded-md transition cursor-pointer ${
+                                thread.isStarred 
+                                  ? 'text-amber-500 hover:bg-amber-100/60' 
+                                  : 'text-gray-300 hover:text-amber-500 hover:bg-gray-100'
+                              }`}
+                              title={thread.isStarred ? "Starred (Click to unstar)" : "Star this conversation"}
+                            >
+                              <Star 
+                                size={15} 
+                                className={thread.isStarred ? 'fill-amber-400 text-amber-500' : ''} 
+                              />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => handleMoveToBin(thread.id, e)}
+                              className="p-1 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
+                              title="Delete conversation (Move to Bin)"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => handleRestoreFromBin(thread.id, e)}
+                              className="p-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition cursor-pointer flex items-center gap-0.5 text-[11px] font-semibold"
+                              title="Restore conversation to Inbox"
+                            >
+                              <RotateCcw size={14} />
+                              <span className="hidden sm:inline text-[10px]">Restore</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => handlePermanentlyDelete(thread.id, e)}
+                              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
+                              title="Delete permanently"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -947,7 +1169,102 @@ export default function EmailCenterPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Conversation Switcher Dropdown in Same Window & Header Actions */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:inline">
+                    Conversation:
+                  </span>
+                  <select
+                    value={activeThread.id}
+                    onChange={(e) => setSelectedThreadId(e.target.value)}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-gray-50 hover:bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer max-w-[200px] sm:max-w-[260px] truncate"
+                    title="Switch Conversation"
+                  >
+                    {(isBinView ? binThreads : activeThreads).map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.contactName}: {t.messages?.[t.messages?.length - 1]?.subject || 'Direct Thread'}
+                      </option>
+                    ))}
+                  </select>
+
+                  {!isBinView ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStar(activeThread.id)}
+                        className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                          activeThread.isStarred
+                            ? 'bg-amber-50 text-amber-600 border-amber-300'
+                            : 'bg-white text-gray-400 hover:text-amber-500 hover:bg-gray-50 border-gray-200'
+                        }`}
+                        title={activeThread.isStarred ? "Starred (Click to unstar)" : "Star this conversation"}
+                      >
+                        <Star size={15} className={activeThread.isStarred ? 'fill-amber-400 text-amber-500' : ''} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleMoveToBin(activeThread.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-gray-200 transition cursor-pointer"
+                        title="Move to Bin"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleRestoreFromBin(activeThread.id)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition cursor-pointer"
+                        title="Restore conversation to Inbox"
+                      >
+                        <RotateCcw size={14} /> Restore
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePermanentlyDelete(activeThread.id)}
+                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition cursor-pointer"
+                        title="Permanently delete conversation"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Bin Banner if Active Thread is in Bin */}
+              {activeThread.isDeleted && (
+                <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-amber-900 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Trash2 size={15} className="text-amber-700 shrink-0" />
+                    <span className="font-semibold">This conversation is currently in the Mail Bin.</span>
+                    {activeThread.deletedAt && (
+                      <span className="text-amber-700 text-[11px] hidden sm:inline">
+                        (Moved to bin on {new Date(activeThread.deletedAt).toLocaleDateString()})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleRestoreFromBin(activeThread.id)}
+                      className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition cursor-pointer text-xs"
+                    >
+                      <RotateCcw size={14} /> Restore to Inbox
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePermanentlyDelete(activeThread.id)}
+                      className="flex items-center gap-1.5 px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition cursor-pointer text-xs"
+                    >
+                      <Trash2 size={14} /> Delete Permanently
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Thread Trail Timeline (Scrollable, Generous Space) */}
               <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
@@ -1086,10 +1403,27 @@ export default function EmailCenterPage() {
               </div>
 
               {/* ==================================================== */}
-              {/* INLINE QUICK REPLY BOX (FLUSH AT BOTTOM)             */}
+              {/* INLINE QUICK REPLY BOX / BIN RESTORE NOTICE          */}
               {/* ==================================================== */}
               <div className="px-6 py-4 bg-white border-t border-gray-200 shrink-0">
-                <form onSubmit={handleSendReply} className="space-y-3">
+                {activeThread.isDeleted ? (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-900">
+                    <div className="flex items-center gap-2">
+                      <Trash2 size={16} className="text-amber-700 shrink-0" />
+                      <span>This conversation is in the <strong>Mail Bin</strong>. To send follow-up replies, please restore it to your inbox.</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleRestoreFromBin(activeThread.id)}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition cursor-pointer text-xs"
+                      >
+                        <RotateCcw size={14} /> Restore Conversation
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSendReply} className="space-y-3">
                   
                   {/* Reply Controls: Sender Identity, Recipient, and CC */}
                   <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-50/70 p-2.5 rounded-lg border border-gray-200">
@@ -1205,6 +1539,7 @@ export default function EmailCenterPage() {
                     </button>
                   </div>
                 </form>
+                )}
               </div>
             </>
           ) : (

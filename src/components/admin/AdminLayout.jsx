@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { LayoutDashboard, LogOut, Loader2, Package, Mail, Menu, X, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, LogOut, Loader2, Package, Mail, Menu, X, AlertCircle , Trash2 } from 'lucide-react';
 
 class AdminErrorBoundary extends React.Component {
   constructor(props) {
@@ -105,9 +105,12 @@ export default function AdminLayout() {
     return <Navigate to="/adminpanel/login" replace />;
   }
 
+  const isMailBin = location.pathname === '/adminpanel/emails' && location.search.includes('view=bin');
+
   const navigation = [
     { name: 'Leads & Quotes', href: '/adminpanel', icon: LayoutDashboard },
     { name: 'Mailing Center', href: '/adminpanel/emails', icon: Mail },
+    { name: 'Mail Bin', href: '/adminpanel/emails?view=bin', icon: Trash2 },
   ];
 
   return (
@@ -141,7 +144,9 @@ export default function AdminLayout() {
           {/* Navigation Links */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
+              const isActive = item.href.includes('view=bin')
+                ? isMailBin
+                : (location.pathname === item.href && !isMailBin);
               return (
                 <Link
                   key={item.name}
@@ -195,7 +200,7 @@ export default function AdminLayout() {
               <Menu size={22} />
             </button>
             <h1 className="text-xl font-bold text-gray-800">
-              {navigation.find(n => n.href === location.pathname)?.name || 'Dashboard'}
+              {isMailBin ? 'Mail Bin (Trash)' : (navigation.find(n => n.href === location.pathname)?.name || 'Dashboard')}
             </h1>
           </div>
 
