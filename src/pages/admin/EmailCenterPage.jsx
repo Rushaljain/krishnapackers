@@ -383,6 +383,38 @@ Baachko Pvt. Ltd. (Krishna Packers)`
   }
 ];
 
+export function isUnrespondedEnquiry(thread) {
+  if (!thread || thread.isDeleted) return false;
+  const messages = thread.messages || [];
+  const hasInbound = messages.some(m => m.senderType === 'inbound') || thread.status === 'New';
+  if (!hasInbound) return false;
+
+  const hasOutbound = messages.some(m => m.senderType === 'outbound');
+  if (!hasOutbound) return true;
+  if (thread.status === 'New') return true;
+
+  const lastMsg = messages[messages.length - 1];
+  if (lastMsg && lastMsg.senderType === 'inbound' && (thread.status === 'Reply Received' || !['Contacted', 'Quoted', 'In Follow-up'].includes(thread.status))) {
+    return true;
+  }
+  return false;
+}
+
+export function isSentThread(thread) {
+  if (!thread || thread.isDeleted) return false;
+  return Boolean(thread.messages?.some(m => m.senderType === 'outbound'));
+}
+
+export function isReceivedThread(thread) {
+  if (!thread || thread.isDeleted) return false;
+  return Boolean(thread.messages?.some(m => m.senderType === 'inbound') || thread.status === 'New');
+}
+
+export function isStarredThread(thread) {
+  if (!thread || thread.isDeleted) return false;
+  return Boolean(thread.isStarred);
+}
+
 export default function EmailCenterPage() {
   // Master Threads State (Genuine leads from Supabase / real sent mail, no dummy data)
   const [threads, setThreads] = useState(() => {
@@ -871,10 +903,13 @@ export default function EmailCenterPage() {
     setReplyAlert({ type: 'success', text: 'Mail Bin emptied permanently.' });
   };
 
-  // Filtered thread pools
+  // Filtered thread pools & tab counts
   const activeThreads = useMemo(() => threads.filter(t => !t.isDeleted), [threads]);
   const binThreads = useMemo(() => threads.filter(t => Boolean(t.isDeleted)), [threads]);
-  const starredCount = useMemo(() => activeThreads.filter(t => t.isStarred).length, [activeThreads]);
+  const starredCount = useMemo(() => activeThreads.filter(isStarredThread).length, [activeThreads]);
+  const sentCount = useMemo(() => activeThreads.filter(isSentThread).length, [activeThreads]);
+  const receivedCount = useMemo(() => activeThreads.filter(isReceivedThread).length, [activeThreads]);
+  const enquiriesCount = useMemo(() => activeThreads.filter(isUnrespondedEnquiry).length, [activeThreads]);
 
   // Filtered Threads
   const filteredThreads = useMemo(() => {
@@ -888,10 +923,13 @@ export default function EmailCenterPage() {
 
       // Tab filter
       if (!isBinView) {
+        if (activeTab === 'sent' && !isSentThread(thread)) return false;
+        if (activeTab === 'received' && !isReceivedThread(thread)) return false;
+        if (activeTab === 'starred' && !thread.isStarred) return false;
+        if (activeTab === 'enquiries' && !isUnrespondedEnquiry(thread)) return false;
         if (activeTab === 'quotes' && thread.category !== 'quote') return false;
         if (activeTab === 'vendors' && thread.category !== 'vendor') return false;
         if (activeTab === 'outreach' && thread.category !== 'outreach') return false;
-        if (activeTab === 'starred' && !thread.isStarred) return false;
       }
 
       // Search filter
@@ -1268,74 +1306,77 @@ export default function EmailCenterPage() {
       
       {/* ==================================================== */}
       {/* TOP TOOLBAR: SEARCH & ACTIONS (FLUSH, SECTIONLESS)   */}
+      {/* Hidden entirely in Mail Bin view                     */}
       {/* ==================================================== */}
-      <div className="px-4 sm:px-6 py-3 border-b border-gray-200 bg-white flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 shrink-0">
-        
-        {/* Left: Search Input & Sync (Swapped to Left) */}
-        <div className="flex items-center gap-2 flex-1 max-w-md w-full">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input 
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search conversations, emails, SKUs..."
-              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 hover:bg-gray-100/60 focus:bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition"
-            />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={14} />
-              </button>
-            )}
+      {!isBinView && (
+        <div className="px-4 sm:px-6 py-3 border-b border-gray-200 bg-white flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 shrink-0">
+          
+          {/* Left: Search Input & Sync (Swapped to Left) */}
+          <div className="flex items-center gap-2 flex-1 max-w-md w-full">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search conversations, emails, SKUs..."
+                className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 hover:bg-gray-100/60 focus:bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={() => fetchAndSyncAll()}
+              disabled={isRefreshing}
+              title="Refresh Inbound Mails & Leads"
+              className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg border border-gray-200 transition cursor-pointer shrink-0"
+            >
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin text-amber-600' : ''} />
+            </button>
           </div>
 
-          <button
-            onClick={() => fetchAndSyncAll()}
-            disabled={isRefreshing}
-            title="Refresh Inbound Mails & Leads"
-            className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg border border-gray-200 transition cursor-pointer shrink-0"
-          >
-            <RefreshCw size={16} className={isRefreshing ? 'animate-spin text-amber-600' : ''} />
-          </button>
-        </div>
+          {/* Right: Star Mails Toggle & Compose New Email */}
+          <div className="flex items-center justify-end gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsStarredFilterActive(prev => !prev)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition cursor-pointer ${
+                isStarredFilterActive
+                  ? 'bg-amber-100 text-amber-900 border-amber-400 ring-2 ring-amber-400/20 shadow-xs'
+                  : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200'
+              }`}
+              title={isStarredFilterActive ? "Showing only starred emails (Click to show all)" : "Filter by starred emails"}
+            >
+              <Star 
+                size={15} 
+                className={isStarredFilterActive ? 'text-amber-500 fill-amber-400' : 'text-gray-400'} 
+              />
+              <span>Star Mails</span>
+              {starredCount > 0 && (
+                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                  isStarredFilterActive ? 'bg-amber-200 text-amber-900' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {starredCount}
+                </span>
+              )}
+            </button>
 
-        {/* Right: Star Mails Toggle & Compose New Email */}
-        <div className="flex items-center justify-end gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsStarredFilterActive(prev => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition cursor-pointer ${
-              isStarredFilterActive
-                ? 'bg-amber-100 text-amber-900 border-amber-400 ring-2 ring-amber-400/20 shadow-xs'
-                : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200'
-            }`}
-            title={isStarredFilterActive ? "Showing only starred emails (Click to show all)" : "Filter by starred emails"}
-          >
-            <Star 
-              size={15} 
-              className={isStarredFilterActive ? 'text-amber-500 fill-amber-400' : 'text-gray-400'} 
-            />
-            <span>Star Mails</span>
-            {starredCount > 0 && (
-              <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                isStarredFilterActive ? 'bg-amber-200 text-amber-900' : 'bg-gray-100 text-gray-600'
-              }`}>
-                {starredCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => handleOpenCompose()}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs sm:text-sm rounded-lg shadow-xs transition hover:shadow-sm cursor-pointer"
-          >
-            <Plus size={16} /> Compose New Email
-          </button>
+            <button
+              onClick={() => handleOpenCompose()}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs sm:text-sm rounded-lg shadow-xs transition hover:shadow-sm cursor-pointer"
+            >
+              <Plus size={16} /> Compose New Email
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ==================================================== */}
       {/* WORKSPACE: DEDICATED MAIL BIN OR 2-PANE MAILING      */}
@@ -1464,11 +1505,20 @@ export default function EmailCenterPage() {
                   } else {
                     setSearchParams({});
                     setActiveTab(val);
+                    if (val === 'starred') {
+                      setIsStarredFilterActive(true);
+                    } else if (isStarredFilterActive) {
+                      setIsStarredFilterActive(false);
+                    }
                   }
                 }}
                 className="w-full text-xs font-semibold py-1.5 pl-3 pr-8 rounded-lg border border-gray-200 bg-white text-gray-800 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none cursor-pointer appearance-none"
               >
                 <option value="all">All Mails ({activeThreads.length})</option>
+                <option value="sent">Sent ({sentCount})</option>
+                <option value="received">Received ({receivedCount})</option>
+                <option value="starred">Starred ({starredCount})</option>
+                <option value="enquiries">Enquiries ({enquiriesCount})</option>
                 <option value="quotes">Quotes & RFQs ({activeThreads.filter(t => t.category === 'quote').length})</option>
                 <option value="vendors">Vendor Follow-ups ({activeThreads.filter(t => t.category === 'vendor').length})</option>
                 <option value="outreach">Outreach ({activeThreads.filter(t => t.category === 'outreach').length})</option>
@@ -1513,7 +1563,7 @@ export default function EmailCenterPage() {
                       Deleted conversations will appear here. You can restore them to your active inbox at any time.
                     </p>
                   </>
-                ) : isStarredFilterActive ? (
+                ) : (isStarredFilterActive || activeTab === 'starred') ? (
                   <>
                     <Star size={36} className="mx-auto mb-2 text-gray-300" />
                     <p className="text-sm font-semibold text-gray-700">No starred emails</p>
@@ -1522,7 +1572,52 @@ export default function EmailCenterPage() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => setIsStarredFilterActive(false)}
+                      onClick={() => { setActiveTab('all'); setIsStarredFilterActive(false); }}
+                      className="mt-3 text-xs font-semibold text-amber-700 hover:underline cursor-pointer"
+                    >
+                      Show all emails
+                    </button>
+                  </>
+                ) : activeTab === 'enquiries' ? (
+                  <>
+                    <Inbox size={36} className="mx-auto mb-2 text-amber-500" />
+                    <p className="text-sm font-semibold text-gray-700">No pending enquiries</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                      All new customer enquiries have been responded to. Fresh inquiries will appear here automatically.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('all')}
+                      className="mt-3 text-xs font-semibold text-amber-700 hover:underline cursor-pointer"
+                    >
+                      Show all emails
+                    </button>
+                  </>
+                ) : activeTab === 'sent' ? (
+                  <>
+                    <Send size={36} className="mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm font-semibold text-gray-700">No sent emails yet</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                      Emails dispatched via "Compose New Email" or follow-up replies will appear here.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('all')}
+                      className="mt-3 text-xs font-semibold text-amber-700 hover:underline cursor-pointer"
+                    >
+                      Show all emails
+                    </button>
+                  </>
+                ) : activeTab === 'received' ? (
+                  <>
+                    <Mail size={36} className="mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm font-semibold text-gray-700">No received emails</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                      Inbound emails or website inquiries sent to Baachko mailboxes will appear here.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('all')}
                       className="mt-3 text-xs font-semibold text-amber-700 hover:underline cursor-pointer"
                     >
                       Show all emails
