@@ -27,12 +27,23 @@ function getResendApiKey(customApiKey) {
   return null;
 }
 
-function generateBrandedHtml(content, subject, senderName = "Baachko Sales Team") {
+function generateBrandedHtml(content, subject, senderName = "Baachko Sales Team", attachments = []) {
   // Replace line breaks with HTML paragraphs/breaks
   const formattedBody = content
     .split('\n\n')
     .map(p => `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #374151; font-size: 15px;">${p.replace(/\n/g, '<br/>')}</p>`)
     .join('');
+
+  const attachmentsListHtml = (attachments && Array.isArray(attachments) && attachments.length > 0)
+    ? `
+      <div style="margin-top: 24px; padding: 14px 18px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Attached Files (${attachments.length}):</p>
+        <ul style="margin: 0; padding-left: 20px; color: #334155; font-size: 13px; line-height: 1.7;">
+          ${attachments.map(a => `<li><strong>${a.filename || a.name || 'File'}</strong>${a.size ? ` <span style="color: #64748b;">(${Math.round(a.size / 1024)} KB)</span>` : ''}</li>`).join('')}
+        </ul>
+      </div>
+    `
+    : '';
 
   return `
 <!DOCTYPE html>
@@ -70,6 +81,7 @@ function generateBrandedHtml(content, subject, senderName = "Baachko Sales Team"
           <tr>
             <td style="padding: 36px 32px 28px 32px; background-color: #ffffff;">
               ${formattedBody}
+              ${attachmentsListHtml}
 
               <!-- Signoff -->
               <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
@@ -129,7 +141,8 @@ export default async function handler(req, res) {
       fromName = 'Baachko Industrial Packaging', 
       fromEmail, 
       replyTo = 'sales@baachko.com',
-      apiKey: customApiKey 
+      apiKey: customApiKey,
+      attachments
     } = req.body || {};
 
     if (!to) {
@@ -161,7 +174,7 @@ export default async function handler(req, res) {
     const senderAddress = fromEmail || process.env.RESEND_FROM_EMAIL || 'sales@baachko.com';
     const formattedFrom = `${fromName} <${senderAddress}>`;
 
-    const emailHtml = html || generateBrandedHtml(message, subject, fromName);
+    const emailHtml = html || generateBrandedHtml(message, subject, fromName, attachments);
 
     // Parse CC list if provided
     let ccList = undefined;
@@ -185,6 +198,22 @@ export default async function handler(req, res) {
       if (bccList && bccList.length === 0) bccList = undefined;
     }
 
+    let formattedAttachments = undefined;
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      formattedAttachments = attachments.map(att => {
+        let contentBuffer = att.content;
+        if (typeof att.content === 'string') {
+          const base64Data = att.content.replace(/^data:[^;]+;base64,/, '');
+          contentBuffer = Buffer.from(base64Data, 'base64');
+        }
+        return {
+          filename: att.filename || att.name || 'attachment',
+          content: contentBuffer,
+          contentType: att.contentType || att.type || undefined
+        };
+      });
+    }
+
     const emailPayload = {
       from: formattedFrom,
       to: Array.isArray(to) ? to : [to],
@@ -193,7 +222,8 @@ export default async function handler(req, res) {
       subject: subject,
       html: emailHtml,
       text: message || subject,
-      replyTo: replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : undefined
+      replyTo: replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : undefined,
+      attachments: formattedAttachments
     };
 
     const response = await resend.emails.send(emailPayload);

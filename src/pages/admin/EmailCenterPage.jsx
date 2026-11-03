@@ -1,12 +1,53 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Mail, Send, CheckCircle2, AlertCircle, Loader2, Check, Clock, 
   Plus, Search, Filter, ChevronDown, User, Building, Paperclip, 
   Reply, ArrowRight, X, Sparkles, Tag, ShieldCheck, CornerDownRight, 
   RefreshCw, FileText, MoreVertical, Inbox, SendHorizonal, ArrowLeft,
-  Star, Trash2, RotateCcw
+  Star, Trash2, RotateCcw, FileSpreadsheet, Image, Download, Eye, Maximize2, File
 } from 'lucide-react';
+
+// ==========================================
+// FILE ATTACHMENT HELPERS
+// ==========================================
+export function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+export function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+export function getAttachmentCategory(att) {
+  if (!att) return 'file';
+  const name = (att.name || att.filename || '').toLowerCase();
+  const type = (att.type || att.contentType || '').toLowerCase();
+  if (type.includes('pdf') || name.endsWith('.pdf')) return 'pdf';
+  if (type.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(name)) return 'image';
+  if (type.includes('sheet') || type.includes('excel') || type.includes('csv') || /\.(xlsx|xls|csv)$/i.test(name)) return 'excel';
+  return 'file';
+}
+
+export function downloadAttachment(att) {
+  const url = att.url || att.dataUrl || att.content;
+  if (!url) return;
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = att.name || att.filename || 'attachment';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 import { supabase } from '../../lib/supabase';
 
 // ==========================================
@@ -308,8 +349,93 @@ export default function EmailCenterPage() {
   const [showCcInput, setShowCcInput] = useState(false);
   const [replyBody, setReplyBody] = useState('');
   const [isSendingReply, setIsSendingReply] = useState(false);
+    // Reply Alert & UI States
   const [replyAlert, setReplyAlert] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Attachments State (PDF, Images, Excel/CSV)
+  const [replyAttachments, setReplyAttachments] = useState([]);
+  const [composeAttachments, setComposeAttachments] = useState([]);
+  const [previewAttachment, setPreviewAttachment] = useState(null);
+  const [csvPreviewData, setCsvPreviewData] = useState(null);
+  const replyFileInputRef = useRef(null);
+  const composeFileInputRef = useRef(null);
+
+  const handleViewAttachment = (att) => {
+    const category = getAttachmentCategory(att);
+    const url = att.url || att.dataUrl || att.content;
+
+    if (category === 'image') {
+      setPreviewAttachment(att);
+      return;
+    }
+
+    if (category === 'pdf') {
+      if (url && typeof url === 'string' && url.startsWith('data:')) {
+        try {
+          const arr = url.split(',');
+          const mime = arr[0].match(/:(.*?);/)?.[1] || 'application/pdf';
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          const blob = new Blob([u8arr], { type: mime });
+          const blobUrl = URL.createObjectURL(blob);
+          window.open(blobUrl, '_blank');
+          return;
+        } catch (e) {
+          console.warn("Could not open PDF in new tab, falling back to modal", e);
+        }
+      } else if (url) {
+        window.open(url, '_blank');
+        return;
+      }
+    }
+
+    if (category === 'excel' && (att.name || att.filename || '').toLowerCase().endsWith('.csv') && url && url.startsWith('data:')) {
+      try {
+        const arr = url.split(',');
+        const text = atob(arr[1]);
+        const rows = text.split(/\r?\n/).filter(Boolean).map(r => r.split(','));
+        setCsvPreviewData({ name: att.name || att.filename, rows });
+        setPreviewAttachment(att);
+        return;
+      } catch (e) {
+        console.warn("CSV parse failed", e);
+      }
+    }
+
+    setPreviewAttachment(att);
+  };
+
+  const handleFilesSelected = async (fileList, target) => {
+    if (!fileList || fileList.length === 0) return;
+    const newAttachments = [];
+    for (const file of Array.from(fileList)) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`File "${file.name}" exceeds 5 MB. Please select files under 5 MB.`);
+        continue;
+      }
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        newAttachments.push({
+          name: file.name,
+          size: file.size,
+          type: file.type || 'application/octet-stream',
+          dataUrl: dataUrl
+        });
+      } catch (err) {
+        console.error("Failed to read file:", file.name, err);
+      }
+    }
+    if (target === 'reply') {
+      setReplyAttachments(prev => [...prev, ...newAttachments]);
+    } else {
+      setComposeAttachments(prev => [...prev, ...newAttachments]);
+    }
+  };
 
   // Sync with Supabase RFQ Leads & Inbound Resend Emails on Mount and every 10s
   useEffect(() => {
@@ -384,7 +510,8 @@ export default function EmailCenterPage() {
             subject: item.subject || 'Incoming Mail',
             body: cleanBody,
             timestamp: item.created_at || new Date().toISOString(),
-            status: 'Received'
+            status: 'Received',
+            attachments: item.attachments || []
           };
 
           // Find if we already have a conversation thread with this sender email & matching subject
@@ -656,7 +783,13 @@ export default function EmailCenterPage() {
           message: replyBody.trim(),
           fromName: chosenTier.fromName,
           fromEmail: chosenTier.email,
-          replyTo: 'sales@baachko.com'
+          replyTo: 'sales@baachko.com',
+          attachments: replyAttachments.map(a => ({
+            filename: a.name,
+            content: a.dataUrl,
+            contentType: a.type,
+            size: a.size
+          }))
         })
       });
 
@@ -789,7 +922,13 @@ export default function EmailCenterPage() {
           message: composeBody.trim(),
           fromName: chosenTier.fromName,
           fromEmail: chosenTier.email,
-          replyTo: 'sales@baachko.com'
+          replyTo: 'sales@baachko.com',
+          attachments: composeAttachments.map(a => ({
+            filename: a.name,
+            content: a.dataUrl,
+            contentType: a.type,
+            size: a.size
+          }))
         })
       });
 
@@ -822,6 +961,8 @@ export default function EmailCenterPage() {
       setSenderFilter(chosenTier.id);
       setReplyTierId(chosenTier.id);
 
+      setComposeAttachments([]);
+      if (composeFileInputRef.current) composeFileInputRef.current.value = '';
       setIsComposeOpen(false);
       setIsMobileViewingThread(true);
 
@@ -1382,6 +1523,106 @@ export default function EmailCenterPage() {
                           {cleanEmailBody(msg.body)}
                         </div>
 
+                        {/* Standardized Attachments Area (PDF, Images, Excel, CSV) */}
+                        {msg.attachments && Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
+                          <div className={`mt-4 pt-3.5 border-t ${isInbound ? 'border-gray-200' : 'border-gray-700/60'}`}>
+                            <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mb-2.5 text-amber-500">
+                              <Paperclip size={13} />
+                              <span>Attached Documents ({msg.attachments.length}):</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                              {msg.attachments.map((att, attIdx) => {
+                                const category = getAttachmentCategory(att);
+                                const isPdf = category === 'pdf';
+                                const isImg = category === 'image';
+                                const isExcel = category === 'excel';
+                                const attUrl = att.url || att.dataUrl || att.content;
+
+                                return (
+                                  <div
+                                    key={attIdx}
+                                    className={`flex flex-col justify-between p-2.5 rounded-xl border transition ${
+                                      isInbound 
+                                        ? 'bg-white border-gray-200 shadow-2xs hover:border-amber-400' 
+                                        : 'bg-white/10 border-white/15 hover:border-amber-400/60 text-white'
+                                    }`}
+                                  >
+                                    <div className="flex items-start gap-2 mb-2 min-w-0">
+                                      <div className={`p-1.5 rounded-lg shrink-0 ${
+                                        isPdf ? 'bg-red-500/15 text-red-500' :
+                                        isImg ? 'bg-purple-500/15 text-purple-400' :
+                                        isExcel ? 'bg-emerald-500/15 text-emerald-400' :
+                                        'bg-gray-500/15 text-gray-400'
+                                      }`}>
+                                        {isPdf && <FileText size={16} />}
+                                        {isImg && <Image size={16} />}
+                                        {isExcel && <FileSpreadsheet size={16} />}
+                                        {!isPdf && !isImg && !isExcel && <File size={16} />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className={`text-xs font-bold truncate ${isInbound ? 'text-gray-900' : 'text-white'}`} title={att.name || att.filename}>
+                                          {att.name || att.filename || 'Attachment'}
+                                        </p>
+                                        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 mt-0.5 font-medium">
+                                          <span className="uppercase tracking-wider font-semibold">
+                                            {isPdf ? 'PDF Document' : isImg ? 'Image' : isExcel ? 'Excel / CSV' : 'File'}
+                                          </span>
+                                          {att.size ? <span>• {formatFileSize(att.size)}</span> : null}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Thumbnail Preview for Images */}
+                                    {isImg && attUrl && (
+                                      <div
+                                        onClick={() => handleViewAttachment(att)}
+                                        className="relative mb-2 h-24 rounded-lg overflow-hidden bg-black/10 cursor-pointer group/thumb"
+                                      >
+                                        <img 
+                                          src={attUrl} 
+                                          alt={att.name} 
+                                          className="w-full h-full object-cover transition duration-300 group-hover/thumb:scale-105"
+                                        />
+                                        <div className="absolute inset-0 bg-black/35 opacity-0 group-hover/thumb:opacity-100 transition flex items-center justify-center text-white text-xs font-semibold gap-1">
+                                          <Eye size={13} /> Click to View
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Action buttons: View & Download */}
+                                    <div className="flex items-center gap-1.5 pt-2 border-t border-gray-100/10">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleViewAttachment(att)}
+                                        className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+                                          isInbound 
+                                            ? 'bg-amber-50 hover:bg-amber-100 text-amber-900' 
+                                            : 'bg-white/15 hover:bg-white/25 text-white'
+                                        }`}
+                                        title={`View ${att.name || 'document'}`}
+                                      >
+                                        <Eye size={12} /> View
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => downloadAttachment(att)}
+                                        className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                                          isInbound 
+                                            ? 'hover:bg-gray-100 text-gray-600' 
+                                            : 'hover:bg-white/10 text-gray-300'
+                                        }`}
+                                        title="Download file"
+                                      >
+                                        <Download size={13} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Footer status & CC */}
                         <div className="mt-3 pt-2.5 border-t border-gray-100/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-400">
                           <div className="flex flex-wrap items-center gap-2">
@@ -1466,20 +1707,94 @@ export default function EmailCenterPage() {
                       </div>
                     </div>
 
-                    {/* CC Toggle */}
-                    <button
-                      type="button"
-                      onClick={() => setShowCcInput(!showCcInput)}
-                      className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition cursor-pointer shrink-0 ${
-                        showCcInput || replyCc.trim()
-                          ? 'bg-amber-100 text-amber-900 border-amber-300'
-                          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
-                      }`}
-                      title="Add Carbon Copy (CC) recipients"
-                    >
-                      {showCcInput ? '− CC' : '+ CC'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {/* Attach Files Button */}
+                      <button
+                        type="button"
+                        onClick={() => replyFileInputRef.current?.click()}
+                        className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg border transition cursor-pointer shrink-0 ${
+                          replyAttachments.length > 0
+                            ? 'bg-amber-100 text-amber-900 border-amber-300 ring-2 ring-amber-400/20 shadow-xs'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                        }`}
+                        title="Attach PDF, Images (PNG/JPG/WEBP), or Excel (CSV/XLSX)"
+                      >
+                        <Paperclip size={13} className="text-amber-700" />
+                        <span>Attach Files</span>
+                        {replyAttachments.length > 0 && (
+                          <span className="bg-amber-200 text-amber-900 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                            {replyAttachments.length}
+                          </span>
+                        )}
+                      </button>
+
+                      {/* CC Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => setShowCcInput(!showCcInput)}
+                        className={`text-xs px-2.5 py-1 rounded-lg border font-semibold transition cursor-pointer shrink-0 ${
+                          showCcInput || replyCc.trim()
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+                        }`}
+                        title="Add Carbon Copy (CC) recipients"
+                      >
+                        {showCcInput ? '− CC' : '+ CC'}
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Hidden File Input for Quick Reply */}
+                  <input
+                    ref={replyFileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.svg,.csv,.xlsx,.xls,application/pdf,image/*,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    onChange={(e) => {
+                      handleFilesSelected(e.target.files, 'reply');
+                      e.target.value = '';
+                    }}
+                    className="hidden"
+                  />
+
+                  {/* Staged Attachments Chips in Quick Reply */}
+                  {replyAttachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-2.5 bg-amber-50/50 rounded-xl border border-amber-200/70">
+                      {replyAttachments.map((att, idx) => {
+                        const cat = getAttachmentCategory(att);
+                        return (
+                          <div key={idx} className="flex items-center gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs shadow-2xs">
+                            <span className={`p-1 rounded font-bold text-[10px] flex items-center gap-1 ${
+                              cat === 'pdf' ? 'bg-red-100 text-red-700' :
+                              cat === 'image' ? 'bg-purple-100 text-purple-700' :
+                              cat === 'excel' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {cat === 'pdf' ? <FileText size={12} /> :
+                               cat === 'image' ? <Image size={12} /> :
+                               cat === 'excel' ? <FileSpreadsheet size={12} /> :
+                               <File size={12} />}
+                              {cat.toUpperCase()}
+                            </span>
+                            <span className="font-semibold text-gray-800 truncate max-w-[150px]" title={att.name}>
+                              {att.name}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-mono">
+                              ({formatFileSize(att.size)})
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setReplyAttachments(prev => prev.filter((_, i) => i !== idx))}
+                              className="text-gray-400 hover:text-red-600 p-0.5 rounded cursor-pointer transition"
+                              title="Remove attachment"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Expandable CC Input Row */}
                   {(showCcInput || replyCc.trim()) && (
@@ -1667,6 +1982,78 @@ export default function EmailCenterPage() {
                 />
               </div>
 
+              {/* Attachments Section in Compose Modal */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Attachments (PDF, Images, Excel)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => composeFileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-semibold transition cursor-pointer"
+                  >
+                    <Paperclip size={13} className="text-amber-700" />
+                    <span>Attach Files</span>
+                    {composeAttachments.length > 0 && (
+                      <span className="bg-amber-200 text-amber-900 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                        {composeAttachments.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                <input
+                  ref={composeFileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.svg,.csv,.xlsx,.xls,application/pdf,image/*,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={(e) => {
+                    handleFilesSelected(e.target.files, 'compose');
+                    e.target.value = '';
+                  }}
+                  className="hidden"
+                />
+
+                {composeAttachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-200">
+                    {composeAttachments.map((att, idx) => {
+                      const cat = getAttachmentCategory(att);
+                      return (
+                        <div key={idx} className="flex items-center gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs shadow-2xs">
+                          <span className={`p-1 rounded font-bold text-[10px] flex items-center gap-1 ${
+                            cat === 'pdf' ? 'bg-red-100 text-red-700' :
+                            cat === 'image' ? 'bg-purple-100 text-purple-700' :
+                            cat === 'excel' ? 'bg-emerald-100 text-emerald-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {cat === 'pdf' ? <FileText size={12} /> :
+                             cat === 'image' ? <Image size={12} /> :
+                             cat === 'excel' ? <FileSpreadsheet size={12} /> :
+                             <File size={12} />}
+                            {cat.toUpperCase()}
+                          </span>
+                          <span className="font-semibold text-gray-800 truncate max-w-[150px]" title={att.name}>
+                            {att.name}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-mono">
+                            ({formatFileSize(att.size)})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setComposeAttachments(prev => prev.filter((_, i) => i !== idx))}
+                            className="text-gray-400 hover:text-red-600 p-0.5 rounded cursor-pointer transition"
+                            title="Remove file"
+                          >
+                            <X size={13} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Action Buttons */}
               <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
                 <button
@@ -1695,6 +2082,89 @@ export default function EmailCenterPage() {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* ATTACHMENT PREVIEW & LIGHTBOX MODAL                  */}
+      {/* ==================================================== */}
+      {previewAttachment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            {/* Modal Header */}
+            <div className="bg-[#0B1730] px-6 py-4 flex items-center justify-between text-white">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                  {getAttachmentCategory(previewAttachment) === 'pdf' ? <FileText size={18} /> :
+                   getAttachmentCategory(previewAttachment) === 'image' ? <Image size={18} /> :
+                   <FileSpreadsheet size={18} />}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-sm truncate">{previewAttachment.name || previewAttachment.filename}</h3>
+                  <span className="text-[11px] text-gray-400">{formatFileSize(previewAttachment.size)}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => downloadAttachment(previewAttachment)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition cursor-pointer"
+                >
+                  <Download size={14} /> Download
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewAttachment(null);
+                    setCsvPreviewData(null);
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-gray-50">
+              {getAttachmentCategory(previewAttachment) === 'image' ? (
+                <img
+                  src={previewAttachment.url || previewAttachment.dataUrl}
+                  alt={previewAttachment.name}
+                  className="max-h-[70vh] max-w-full rounded-lg object-contain shadow-md"
+                />
+              ) : csvPreviewData ? (
+                <div className="w-full h-full max-h-[70vh] overflow-auto bg-white rounded-xl border border-gray-200">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <tbody>
+                      {csvPreviewData.rows.map((row, rIdx) => (
+                        <tr key={rIdx} className={rIdx === 0 ? 'bg-gray-100 font-bold sticky top-0' : 'border-t border-gray-100 hover:bg-gray-50'}>
+                          {row.map((col, cIdx) => (
+                            <td key={cIdx} className="p-2.5 border-r border-gray-100 truncate max-w-[200px]">
+                              {col}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center p-8 bg-white rounded-xl border border-gray-200 max-w-md">
+                  <FileText size={48} className="mx-auto mb-3 text-gray-400" />
+                  <p className="font-bold text-gray-800 text-sm mb-1">{previewAttachment.name || previewAttachment.filename}</p>
+                  <p className="text-xs text-gray-500 mb-4">{formatFileSize(previewAttachment.size)} • Standard format</p>
+                  <button
+                    type="button"
+                    onClick={() => downloadAttachment(previewAttachment)}
+                    className="px-4 py-2 bg-[#C95A08] hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
+                  >
+                    <Download size={14} /> Download & Open File
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
