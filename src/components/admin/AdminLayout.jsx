@@ -132,12 +132,20 @@ export default function AdminLayout() {
         }`}
       >
         <div className="w-64 flex flex-col h-full">
-          {/* Sidebar Header with Brand */}
-          <div className="p-5 border-b border-gray-700 flex items-center">
+          {/* Sidebar Header with Brand & Mobile Close Button */}
+          <div className="p-4 sm:p-5 border-b border-gray-700 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition" target="_blank" title="View live website">
               <Package className="text-amber-500 shrink-0" />
               <span className="font-bold text-lg tracking-tight">ERP Admin</span>
             </Link>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 -mr-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 md:hidden transition cursor-pointer"
+              aria-label="Close sidebar drawer"
+              title="Close sidebar"
+            >
+              <X size={20} />
+            </button>
           </div>
           
           {/* Navigation Links */}
@@ -203,18 +211,18 @@ export default function AdminLayout() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden min-w-0 transition-all duration-300">
         {/* Top Navigation Panel Header */}
-        <header className="bg-white border-b border-gray-200 py-3.5 px-4 sm:px-6 md:px-8 flex justify-between items-center shadow-xs z-10">
-          <div className="flex items-center gap-3">
+        <header className="bg-white border-b border-gray-200 py-3 sm:py-3.5 px-3.5 sm:px-6 md:px-8 flex justify-between items-center shadow-xs z-10">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 mr-2">
             {/* Hamburger in Top Left of Top Nav Panel */}
             <button
               onClick={toggleSidebar}
-              className="p-2 -ml-1 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 transition focus:outline-hidden focus:ring-2 focus:ring-amber-500/40 cursor-pointer"
+              className="p-2 -ml-1 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 transition focus:outline-hidden focus:ring-2 focus:ring-amber-500/40 cursor-pointer shrink-0"
               title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
               aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
             >
               <Menu size={22} />
             </button>
-            <h1 className="text-xl font-bold text-gray-800">
+            <h1 className="text-base sm:text-xl font-bold text-gray-800 truncate">
               {isMailBin ? 'Mail Bin (Trash)' : (navigation.find(n => n.href === location.pathname)?.name || 'Dashboard')}
             </h1>
           </div>
@@ -224,7 +232,7 @@ export default function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <main className={`flex-1 ${location.pathname === '/adminpanel/emails' ? 'overflow-hidden p-0 bg-white flex flex-col' : 'overflow-auto p-4 sm:p-6 md:p-8 bg-gray-50'}`}>
+        <main className={`flex-1 ${location.pathname === '/adminpanel/emails' ? 'overflow-hidden p-0 bg-white flex flex-col' : 'overflow-auto p-3 sm:p-6 md:p-8 bg-gray-50'}`}>
           <AdminErrorBoundary>
             <Outlet />
           </AdminErrorBoundary>

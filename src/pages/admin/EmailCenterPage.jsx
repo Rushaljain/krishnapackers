@@ -1324,10 +1324,10 @@ export default function EmailCenterPage() {
       {/* Hidden entirely in Mail Bin view                     */}
       {/* ==================================================== */}
       {!isBinView && (
-        <div className="px-4 sm:px-6 py-3 border-b border-gray-200 bg-white flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 shrink-0">
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3 border-b border-gray-200 bg-white flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 sm:gap-3 shrink-0">
           
-          {/* Left: Search Input & Sync (Swapped to Left) */}
-          <div className="flex items-center gap-2 flex-1 max-w-md w-full">
+          {/* Left: Search Input & Sync */}
+          <div className="flex items-center gap-2 flex-1 max-w-none sm:max-w-md w-full">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input 
@@ -1358,10 +1358,10 @@ export default function EmailCenterPage() {
           </div>
 
           {/* Right: Compose New Email */}
-          <div className="flex items-center justify-end shrink-0">
+          <div className="flex items-center justify-end shrink-0 w-full sm:w-auto">
             <button
               onClick={() => handleOpenCompose()}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 text-white font-bold text-xs sm:text-sm rounded-lg shadow-xs transition hover:shadow-sm cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-800 hover:to-amber-900 active:from-amber-900 text-white font-bold text-xs sm:text-sm rounded-lg shadow-xs transition hover:shadow-sm cursor-pointer"
             >
               <Plus size={16} /> Compose New Email
             </button>
@@ -1766,25 +1766,27 @@ export default function EmailCenterPage() {
           {activeThread ? (
             <>
               {/* Thread Header Bar with Conversation Switcher */}
-              <div className="px-6 py-3.5 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="px-3.5 sm:px-6 py-2.5 sm:py-3.5 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
                 
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 mr-1">
                   {/* Mobile Back Button */}
                   <button
                     onClick={() => setIsMobileViewingThread(false)}
-                    className="md:hidden p-1.5 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 cursor-pointer"
+                    className="md:hidden p-2 -ml-1 text-gray-600 hover:text-gray-900 active:bg-gray-200 rounded-lg hover:bg-gray-100 cursor-pointer shrink-0"
+                    aria-label="Back to conversations list"
+                    title="Back to conversations"
                   >
-                    <ArrowLeft size={18} />
+                    <ArrowLeft size={19} />
                   </button>
 
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                      <h2 className="text-sm sm:text-lg font-bold text-gray-900 truncate">
                         {activeThread.messages?.[activeThread.messages?.length - 1]?.subject || 'Direct Conversation'}
                       </h2>
                       {activeThread.isImportant && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 shrink-0">
-                          <Tag size={11} className="fill-red-200" /> Important
+                        <span className="inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-red-100 text-red-700 shrink-0">
+                          <Tag size={10} className="fill-red-200" /> Important
                         </span>
                       )}
                     </div>
@@ -1817,7 +1819,7 @@ export default function EmailCenterPage() {
                       {/* Elegant Contact Popover Card */}
                       {(isContactPopoverOpen || isContactHovered) && (
                         <div 
-                          className="absolute left-0 top-full mt-1.5 w-72 bg-white rounded-xl shadow-xl border border-gray-200 p-3.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150"
+                          className="absolute left-0 top-full mt-1.5 w-64 sm:w-72 bg-white rounded-xl shadow-xl border border-gray-200 p-3.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150"
                           onMouseEnter={() => setIsContactHovered(true)}
                           onMouseLeave={() => setIsContactHovered(false)}
                         >
@@ -1942,7 +1944,7 @@ export default function EmailCenterPage() {
               )}
 
               {/* Thread Trail Timeline (Scrollable, Generous Space) */}
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+              <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
                 {/* Timeline Start Notice */}
                 <div className="text-center">
@@ -1982,7 +1984,7 @@ export default function EmailCenterPage() {
                       className={`flex flex-col ${isInbound ? 'items-start' : 'items-end'} space-y-1.5 w-full`}
                     >
                       {/* Message Meta Info Header */}
-                      <div className="flex items-center gap-2 text-xs text-gray-500 px-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500 px-1">
                         <span className="font-bold text-gray-800">
                           {isInbound ? msg.senderName : msg.senderName || 'Baachko Team'}
                         </span>
@@ -2002,7 +2004,7 @@ export default function EmailCenterPage() {
                       </div>
 
                       {/* Message Card - Spacious & Clean */}
-                      <div className={`w-full max-w-3xl lg:max-w-4xl rounded-xl p-5 border transition ${
+                      <div className={`w-full max-w-3xl lg:max-w-4xl rounded-xl p-3.5 sm:p-5 border transition ${
                         isInbound 
                           ? 'bg-gray-50/80 border-gray-200 text-gray-800 shadow-2xs' 
                           : 'bg-[#0B1730] text-white border-gray-800 shadow-xs'
@@ -2161,7 +2163,7 @@ export default function EmailCenterPage() {
               {/* ==================================================== */}
               {/* INLINE QUICK REPLY BOX / BIN RESTORE NOTICE          */}
               {/* ==================================================== */}
-              <div className="px-6 py-4 bg-white border-t border-gray-200 shrink-0">
+              <div className="px-3 sm:px-6 py-3 sm:py-4 bg-white border-t border-gray-200 shrink-0">
                 {activeThread.isDeleted ? (
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-900">
                     <div className="flex items-center gap-2">
@@ -2190,6 +2192,7 @@ export default function EmailCenterPage() {
                           <Reply size={13} className="text-amber-700" /> From:
                         </span>
                         <select
+                          style={{ maxWidth: "210px" }}
                           value={replyTierId}
                           onChange={(e) => {
                             const val = e.target.value;
@@ -2404,8 +2407,8 @@ export default function EmailCenterPage() {
       {/* POP-UP MODAL: COMPOSE NEW EMAIL (NEW MAIL ID)        */}
       {/* ==================================================== */}
       {isComposeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-200 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-200 flex flex-col max-h-[94vh] sm:max-h-[90vh]">
             
             {/* Modal Header */}
             <div className="bg-[#0B1730] px-6 py-4 flex justify-between items-center text-white">
@@ -2422,7 +2425,7 @@ export default function EmailCenterPage() {
             </div>
 
             {/* Modal Form Body */}
-            <form onSubmit={handleSubmitCompose} className="p-6 overflow-y-auto space-y-4">
+            <form onSubmit={handleSubmitCompose} className="p-4 sm:p-6 overflow-y-auto space-y-3 sm:space-y-4">
               
               {composeError && (
                 <div className="p-3 bg-red-50 text-red-800 border border-red-200 rounded-xl text-xs flex items-center gap-2">
@@ -2635,8 +2638,8 @@ export default function EmailCenterPage() {
       {/* ATTACHMENT VIEWER & PREVIEW MODAL                    */}
       {/* ==================================================== */}
       {previewAttachment && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-gray-200">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[96vh] sm:max-h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-gray-200">
             {/* Modal Header */}
             <div className="bg-[#0B1730] px-5 sm:px-6 py-3.5 flex items-center justify-between text-white shrink-0">
               <div className="flex items-center gap-3 min-w-0">
@@ -2701,12 +2704,12 @@ export default function EmailCenterPage() {
             </div>
 
             {/* Modal Body: Direct PDF Viewer, Image Viewer, or Spreadsheet */}
-            <div className="flex-1 overflow-auto p-4 sm:p-6 flex items-center justify-center bg-slate-900/95 min-h-[500px]">
+            <div className="flex-1 overflow-auto p-2 sm:p-6 flex items-center justify-center bg-slate-900/95 min-h-[340px] sm:min-h-[500px]">
               {getAttachmentCategory(previewAttachment) === 'pdf' ? (
-                <div className="w-full h-full min-h-[550px] max-h-[82vh] flex flex-col bg-white rounded-xl overflow-hidden shadow-2xl border border-gray-700/50">
+                <div className="w-full h-full min-h-[340px] sm:min-h-[550px] max-h-[82vh] flex flex-col bg-white rounded-xl overflow-hidden shadow-2xl border border-gray-700/50">
                   <iframe
                     src={`${previewAttachment.viewerUrl || previewAttachment.url || previewAttachment.download_url || previewAttachment.dataUrl}#toolbar=1`}
-                    className="w-full h-[76vh] border-0 rounded-xl bg-white"
+                    className="w-full h-[65vh] sm:h-[76vh] border-0 rounded-xl bg-white"
                     title={previewAttachment.name || 'PDF Document'}
                   />
                 </div>

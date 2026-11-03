@@ -31,17 +31,17 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <BaachkoLogo className="h-10 w-auto mx-auto text-[#0B1730] mb-2" />
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 px-4 sm:py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md mx-auto text-center">
+        <BaachkoLogo className="h-9 sm:h-10 w-auto mx-auto text-[#0B1730] mb-2" />
         <h2 className="sr-only">Baachko</h2>
-        <p className="mt-2 text-center text-sm text-gray-600 font-medium tracking-widest uppercase">
+        <p className="mt-1 sm:mt-2 text-center text-xs sm:text-sm text-gray-600 font-semibold tracking-widest uppercase">
           Admin Portal
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
+      <div className="mt-6 sm:mt-8 w-full max-w-md mx-auto">
+        <div className="bg-white py-6 px-4 sm:py-8 sm:px-10 shadow-lg rounded-2xl border border-gray-100">
           <form className="space-y-6" onSubmit={handleAuth}>
             {error && (
               <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm text-center">

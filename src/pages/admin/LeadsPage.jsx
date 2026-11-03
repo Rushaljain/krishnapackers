@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Search, Download, Mail, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Search, Download, Mail, Trash2, ChevronDown, ChevronUp, Calendar, Building, Phone } from 'lucide-react';
 import SendEmailModal from '../../components/admin/SendEmailModal';
 
 export default function LeadsPage() {
@@ -139,33 +139,195 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       
       {/* Controls */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between gap-4 items-center">
-        <div className="relative w-full sm:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+      <div className="bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 items-stretch sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
           <input 
             type="text"
             placeholder="Search leads by name, company, email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+            className="w-full pl-9 sm:pl-10 pr-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
           />
         </div>
-        <div>
+        <div className="flex items-center gap-2.5 justify-between sm:justify-end shrink-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-gray-500">Status:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="text-xs font-semibold px-2.5 py-1.5 sm:py-2 rounded-lg border border-gray-300 bg-white hover:border-amber-500 text-gray-700 shadow-2xs focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
+              title="Filter leads by status"
+            >
+              <option value="All">All Statuses</option>
+              <option value="New">New</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
           <button 
             onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-lg transition cursor-pointer"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-800 text-xs sm:text-sm font-medium rounded-lg transition cursor-pointer shrink-0"
           >
-            <Download size={16} />
-            Export CSV
+            <Download size={14} className="sm:w-4 sm:h-4" />
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Mobile Leads Cards View (Optimized for Phones < 768px) */}
+      <div className="block md:hidden space-y-3">
+        {filteredLeads.map((lead) => {
+          const isExpanded = !!expandedLeadIds[lead.id];
+
+          return (
+            <div 
+              key={lead.id}
+              className="bg-white rounded-xl shadow-xs border border-gray-200 p-4 space-y-3"
+            >
+              {/* Card Top Row: Date & Status */}
+              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-gray-100">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                  <Calendar size={13} className="text-gray-400" />
+                  <span>{new Date(lead.created_at).toLocaleDateString()}</span>
+                </div>
+                <div>
+                  <select
+                    value={lead.status || 'New'}
+                    onChange={(e) => updateStatus(lead.id, e.target.value)}
+                    className={`text-xs font-bold rounded-full px-3 py-1 outline-none cursor-pointer border-0 shadow-2xs ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-amber-500 ${getStatusColor(lead.status || 'New')}`}
+                  >
+                    <option value="New">New</option>
+                    <option value="Contacted">Contacted</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Customer Info */}
+              <div>
+                <div className="text-base font-bold text-gray-900 leading-tight">
+                  {lead.contact_name}
+                </div>
+                {lead.company_name && (
+                  <div className="text-xs text-gray-500 font-medium mt-0.5 flex items-center gap-1">
+                    <Building size={12} className="text-gray-400 shrink-0" />
+                    <span>{lead.company_name}</span>
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 pt-2 border-t border-gray-50 text-xs">
+                  {lead.email && (
+                    <a
+                      href={`mailto:${lead.email}`}
+                      className="text-amber-800 hover:text-amber-900 font-mono font-medium flex items-center gap-1 hover:underline"
+                    >
+                      <Mail size={12} className="shrink-0" />
+                      <span className="truncate max-w-[200px]">{lead.email}</span>
+                    </a>
+                  )}
+                  {lead.phone && (
+                    <a
+                      href={`tel:${lead.phone}`}
+                      className="text-gray-700 hover:text-amber-800 font-mono flex items-center gap-1 hover:underline"
+                    >
+                      <Phone size={12} className="text-gray-400 shrink-0" />
+                      <span>{lead.phone}</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Requirements & Badges */}
+              {(lead.target_product_sku || lead.estimated_qty || lead.message) && (
+                <div className="pt-2 border-t border-gray-100 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {lead.target_product_sku && (
+                      <span className="px-2 py-0.5 bg-amber-50 border border-amber-200/60 rounded text-[11px] font-mono font-bold text-amber-800">
+                        SKU: {lead.target_product_sku}
+                      </span>
+                    )}
+                    {lead.estimated_qty && (
+                      <span className="px-2 py-0.5 bg-gray-50 border border-gray-200 rounded text-[11px] font-medium text-gray-700">
+                        Qty: <strong>{lead.estimated_qty}</strong>
+                      </span>
+                    )}
+                  </div>
+
+                  {lead.message && (
+                    <div className="w-full">
+                      {isExpanded ? (
+                        <div className="bg-slate-50/90 rounded-xl p-3 border border-slate-200/90 shadow-2xs">
+                          <div className="flex items-center justify-between gap-2 pb-1.5 mb-1.5 border-b border-slate-200/70">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                              Full Requirement
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => toggleExpandLead(lead.id)}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-semibold text-amber-800 hover:bg-amber-100/60 rounded transition cursor-pointer"
+                            >
+                              <span>Less</span>
+                              <ChevronUp size={13} />
+                            </button>
+                          </div>
+                          <div className="text-xs text-gray-800 leading-relaxed whitespace-pre-wrap select-text">
+                            "{lead.message}"
+                          </div>
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={() => toggleExpandLead(lead.id)}
+                          className="flex items-start justify-between gap-2 bg-gray-50/70 p-2.5 rounded-lg border border-gray-100 cursor-pointer hover:bg-gray-100/60 transition"
+                        >
+                          <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                            "{lead.message}"
+                          </p>
+                          <ChevronDown size={14} className="text-gray-400 shrink-0 mt-0.5" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons Row */}
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedLeadForEmail(lead);
+                    setIsEmailModalOpen(true);
+                  }}
+                  className="flex-1 py-2 px-3 bg-[#C95A08] hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-[0.98]"
+                >
+                  <Mail size={14} /> Reply
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteLead(lead.id)}
+                  className="p-2 text-red-500 hover:text-red-700 bg-gray-100 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                  title="Delete Lead"
+                  aria-label="Delete Lead"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+
+        {filteredLeads.length === 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500 text-xs sm:text-sm">
+            No leads found matching your search or filter.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop/Tablet Table (Hidden on small screens < 768px) */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 border-b border-gray-200">

@@ -180,11 +180,11 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-2xl w-full max-h-[95vh] sm:max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="bg-[#0B1730] text-white px-6 py-4 flex items-center justify-between border-b border-amber-600">
+        <div className="bg-[#0B1730] text-white px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between border-b border-amber-600">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-white/10 rounded-lg">
               <Mail className="h-5 w-5 text-amber-500" />
@@ -203,7 +203,7 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSend} className="p-6 overflow-y-auto flex-1 space-y-4">
+        <form onSubmit={handleSend} className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-3.5 sm:space-y-4">
           
           {statusMessage.text && (
             <div className={`p-4 rounded-xl text-sm flex items-start gap-3 ${
@@ -367,22 +367,22 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
           </div>
 
           {/* Footer Action */}
-          <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
-            <span className="text-xs text-gray-500">
-              ⚡ Powered by Resend API • Automatically updates lead to <strong className="text-amber-700">Contacted</strong>
+          <div className="pt-3 border-t border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <span className="text-xs text-gray-500 text-center sm:text-left">
+              ⚡ Powered by Resend API • Updates lead to <strong className="text-amber-700">Contacted</strong>
             </span>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                className="flex-1 sm:flex-initial px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSending}
-                className="px-5 py-2 bg-[#C95A08] hover:bg-orange-700 text-white rounded-lg text-sm font-bold shadow-md transition flex items-center gap-2 disabled:opacity-60"
+                className="flex-1 sm:flex-initial px-5 py-2 bg-[#C95A08] hover:bg-orange-700 text-white rounded-lg text-sm font-bold shadow-md transition flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
               >
                 {isSending ? (
                   <>
