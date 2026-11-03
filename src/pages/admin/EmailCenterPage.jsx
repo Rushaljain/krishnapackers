@@ -1346,22 +1346,30 @@ export default function EmailCenterPage() {
           <div className="flex items-center justify-end gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => setIsStarredFilterActive(prev => !prev)}
+              onClick={() => {
+                if (activeTab === 'starred' || isStarredFilterActive) {
+                  setActiveTab('all');
+                  setIsStarredFilterActive(false);
+                } else {
+                  setActiveTab('starred');
+                  setIsStarredFilterActive(true);
+                }
+              }}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition cursor-pointer ${
-                isStarredFilterActive
+                isStarredFilterActive || activeTab === 'starred'
                   ? 'bg-amber-100 text-amber-900 border-amber-400 ring-2 ring-amber-400/20 shadow-xs'
                   : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200'
               }`}
-              title={isStarredFilterActive ? "Showing only starred emails (Click to show all)" : "Filter by starred emails"}
+              title={isStarredFilterActive || activeTab === 'starred' ? "Showing only starred emails (Click to show all)" : "Filter by starred emails"}
             >
               <Star 
                 size={15} 
-                className={isStarredFilterActive ? 'text-amber-500 fill-amber-400' : 'text-gray-400'} 
+                className={isStarredFilterActive || activeTab === 'starred' ? 'text-amber-500 fill-amber-400' : 'text-gray-400'} 
               />
               <span>Star Mails</span>
               {starredCount > 0 && (
                 <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                  isStarredFilterActive ? 'bg-amber-200 text-amber-900' : 'bg-gray-100 text-gray-600'
+                  isStarredFilterActive || activeTab === 'starred' ? 'bg-amber-200 text-amber-900' : 'bg-gray-100 text-gray-600'
                 }`}>
                   {starredCount}
                 </span>
