@@ -5,7 +5,7 @@ import {
   Plus, Search, Filter, ChevronDown, User, Building, Paperclip, 
   Reply, ArrowRight, X, Sparkles, Tag, ShieldCheck, CornerDownRight, 
   RefreshCw, FileText, MoreVertical, Inbox, SendHorizonal, ArrowLeft,
-  Star, Trash2, RotateCcw, FileSpreadsheet, Image, Download, Eye, Maximize2, File
+  Star, Trash2, RotateCcw, FileSpreadsheet, Image, Download, Eye, Maximize2, File, Phone
 } from 'lucide-react';
 
 // ==========================================
@@ -495,6 +495,21 @@ export default function EmailCenterPage() {
   const [showCcInput, setShowCcInput] = useState(false);
   const [replyBody, setReplyBody] = useState('');
   const [replyIsImportant, setReplyIsImportant] = useState(false);
+
+  // Contact details popover state for active thread (Hover & Click)
+  const [isContactPopoverOpen, setIsContactPopoverOpen] = useState(false);
+  const [isContactHovered, setIsContactHovered] = useState(false);
+  const contactCardRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (contactCardRef.current && !contactCardRef.current.contains(event.target)) {
+        setIsContactPopoverOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [isSendingReply, setIsSendingReply] = useState(false);
     // Reply Alert & UI States
   const [replyAlert, setReplyAlert] = useState(null);
@@ -1774,17 +1789,73 @@ export default function EmailCenterPage() {
                       )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-0.5">
-                      <span className="font-bold text-gray-800">{activeThread.contactName}</span>
-                      <span>•</span>
-                      <span className="font-medium text-gray-600">{activeThread.company}</span>
-                      <span>•</span>
-                      <span className="font-mono text-gray-600">{activeThread.email}</span>
-                      {activeThread.phone && (
-                        <>
-                          <span>•</span>
-                          <span className="text-gray-600">{activeThread.phone}</span>
-                        </>
+                    {/* Contact Name & Hover/Click Details Popover */}
+                    <div 
+                      ref={contactCardRef}
+                      className="relative inline-block mt-0.5"
+                      onMouseEnter={() => setIsContactHovered(true)}
+                      onMouseLeave={() => setIsContactHovered(false)}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setIsContactPopoverOpen(prev => !prev)}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-amber-800 transition py-0.5 px-1.5 -ml-1.5 rounded-md hover:bg-amber-50 cursor-pointer group"
+                        title="Click or hover to view contact information"
+                      >
+                        <User size={13} className="text-amber-700 shrink-0" />
+                        <span className="underline decoration-dotted decoration-gray-400 group-hover:decoration-amber-700 underline-offset-3 font-bold text-gray-900">
+                          {activeThread.contactName}
+                        </span>
+                        <ChevronDown 
+                          size={12} 
+                          className={`text-gray-400 transition-transform duration-200 ${
+                            isContactPopoverOpen || isContactHovered ? 'rotate-180 text-amber-700' : ''
+                          }`} 
+                        />
+                      </button>
+
+                      {/* Elegant Contact Popover Card */}
+                      {(isContactPopoverOpen || isContactHovered) && (
+                        <div 
+                          className="absolute left-0 top-full mt-1.5 w-72 bg-white rounded-xl shadow-xl border border-gray-200 p-3.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150"
+                          onMouseEnter={() => setIsContactHovered(true)}
+                          onMouseLeave={() => setIsContactHovered(false)}
+                        >
+                          {/* Header */}
+                          <div className="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b border-gray-100">
+                            <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center shrink-0">
+                              {activeThread.contactName?.slice(0, 2).toUpperCase() || 'BK'}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-bold text-gray-900 text-sm truncate">{activeThread.contactName}</h4>
+                              <p className="text-[11px] text-gray-500 truncate">{activeThread.company || 'Direct Contact'}</p>
+                            </div>
+                          </div>
+
+                          {/* Contact Details List */}
+                          <div className="space-y-2 text-gray-600">
+                            {activeThread.company && (
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <Building size={13} className="text-gray-400 shrink-0" />
+                                <span className="font-medium text-gray-800 truncate">{activeThread.company}</span>
+                              </div>
+                            )}
+
+                            {activeThread.email && (
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <Mail size={13} className="text-gray-400 shrink-0" />
+                                <span className="font-mono text-gray-700 truncate">{activeThread.email}</span>
+                              </div>
+                            )}
+
+                            {activeThread.phone && (
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <Phone size={13} className="text-gray-400 shrink-0" />
+                                <span className="font-mono text-gray-700">{activeThread.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
