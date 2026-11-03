@@ -739,12 +739,10 @@ export default function EmailCenterPage() {
     }
   }, [activeThread?.id, activeThread?.email]);
 
-  // Filter messages based on active sender dropdown selection
+  // Messages in active thread
   const displayedMessages = useMemo(() => {
-    if (!activeThread?.messages) return [];
-    if (senderFilter === 'all') return activeThread.messages;
-    return activeThread.messages.filter(msg => matchesSenderTier(msg, senderFilter));
-  }, [activeThread?.messages, senderFilter]);
+    return activeThread?.messages || [];
+  }, [activeThread?.messages]);
 
   // Handle Thread Status Change
   const updateThreadStatus = (newStatus) => {
@@ -1310,70 +1308,6 @@ export default function EmailCenterPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Conversation Switcher Dropdown in Same Window & Header Actions */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:inline">
-                    Conversation:
-                  </span>
-                  <select
-                    value={activeThread.id}
-                    onChange={(e) => setSelectedThreadId(e.target.value)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-gray-50 hover:bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer max-w-[200px] sm:max-w-[260px] truncate"
-                    title="Switch Conversation"
-                  >
-                    {(isBinView ? binThreads : activeThreads).map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.contactName}: {t.messages?.[t.messages?.length - 1]?.subject || 'Direct Thread'}
-                      </option>
-                    ))}
-                  </select>
-
-                  {!isBinView ? (
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStar(activeThread.id)}
-                        className={`p-1.5 rounded-lg border transition cursor-pointer ${
-                          activeThread.isStarred
-                            ? 'bg-amber-50 text-amber-600 border-amber-300'
-                            : 'bg-white text-gray-400 hover:text-amber-500 hover:bg-gray-50 border-gray-200'
-                        }`}
-                        title={activeThread.isStarred ? "Starred (Click to unstar)" : "Star this conversation"}
-                      >
-                        <Star size={15} className={activeThread.isStarred ? 'fill-amber-400 text-amber-500' : ''} />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleMoveToBin(activeThread.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-gray-200 transition cursor-pointer"
-                        title="Move to Bin"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleRestoreFromBin(activeThread.id)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition cursor-pointer"
-                        title="Restore conversation to Inbox"
-                      >
-                        <RotateCcw size={14} /> Restore
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handlePermanentlyDelete(activeThread.id)}
-                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition cursor-pointer"
-                        title="Permanently delete conversation"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* Bin Banner if Active Thread is in Bin */}
@@ -1409,35 +1343,6 @@ export default function EmailCenterPage() {
 
               {/* Thread Trail Timeline (Scrollable, Generous Space) */}
               <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-                
-                {/* Active Channel Trail Banner */}
-                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-slate-50 rounded-xl border border-gray-200 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">Active Trail:</span>
-                    <span className="font-semibold text-gray-800 flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${senderFilter === 'all' ? 'bg-amber-600' : getSenderTier(senderFilter).dotColor}`} />
-                      {senderFilter === 'all' ? 'All Channels (Combined History)' : `${getSenderTier(senderFilter).email} (${getSenderTier(senderFilter).fromName})`}
-                    </span>
-                    <span className="text-gray-400 font-mono text-[11px]">({displayedMessages.length} msgs)</span>
-                  </div>
-                  {senderFilter !== 'all' ? (
-                    <button
-                      type="button"
-                      onClick={() => setSenderFilter('all')}
-                      className="text-[11px] font-semibold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
-                    >
-                      Show All Channels
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setSenderFilter(replyTierId)}
-                      className="text-[11px] font-semibold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
-                    >
-                      Filter by {getSenderTier(replyTierId).name}
-                    </button>
-                  )}
-                </div>
 
                 {/* Timeline Start Notice */}
                 <div className="text-center">
