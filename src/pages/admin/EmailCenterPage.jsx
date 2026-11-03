@@ -411,6 +411,7 @@ export default function EmailCenterPage() {
             .map(t => ({
               ...t,
               isStarred: Boolean(t.isStarred),
+              isImportant: Boolean(t.isImportant),
               isDeleted: Boolean(t.isDeleted),
               deletedAt: t.deletedAt || null,
               messages: Array.isArray(t.messages) ? t.messages : []
@@ -450,6 +451,7 @@ export default function EmailCenterPage() {
   const [composeCategory, setComposeCategory] = useState('quote');
   const [composeSubject, setComposeSubject] = useState('');
   const [composeBody, setComposeBody] = useState('');
+  const [composeIsImportant, setComposeIsImportant] = useState(false);
   const [isSendingCompose, setIsSendingCompose] = useState(false);
   const [composeError, setComposeError] = useState(null);
 
@@ -460,6 +462,7 @@ export default function EmailCenterPage() {
   const [replyCc, setReplyCc] = useState('');
   const [showCcInput, setShowCcInput] = useState(false);
   const [replyBody, setReplyBody] = useState('');
+  const [replyIsImportant, setReplyIsImportant] = useState(false);
   const [isSendingReply, setIsSendingReply] = useState(false);
     // Reply Alert & UI States
   const [replyAlert, setReplyAlert] = useState(null);
@@ -784,6 +787,16 @@ export default function EmailCenterPage() {
     }));
   };
 
+  const handleToggleImportant = (threadId, e) => {
+    if (e) e.stopPropagation();
+    setThreads(prev => prev.map(t => {
+      if (t.id === threadId) {
+        return { ...t, isImportant: !t.isImportant };
+      }
+      return t;
+    }));
+  };
+
   const handleMoveToBin = (threadId, e) => {
     if (e) e.stopPropagation();
     setThreads(prev => prev.map(t => {
@@ -1001,6 +1014,7 @@ export default function EmailCenterPage() {
         body: replyBody.trim(),
         timestamp: new Date().toISOString(),
         status: 'Delivered',
+        isImportant: replyIsImportant,
         attachments: replyAttachments.map(a => ({
           name: a.name,
           size: a.size,
@@ -1045,6 +1059,7 @@ export default function EmailCenterPage() {
           targetSku: '',
           category: 'quote',
           status: 'Quoted',
+          isImportant: replyIsImportant,
           lastUpdated: new Date().toISOString(),
           messages: [newMessage]
         };
@@ -1057,6 +1072,7 @@ export default function EmailCenterPage() {
             return {
               ...t,
               status: t.status === 'New' ? 'Quoted' : 'In Follow-up',
+              isImportant: replyIsImportant || t.isImportant,
               lastUpdated: new Date().toISOString(),
               messages: [...t.messages, newMessage]
             };
@@ -1068,6 +1084,7 @@ export default function EmailCenterPage() {
       setReplyBody('');
       setReplyCc('');
       setShowCcInput(false);
+      setReplyIsImportant(false);
       setReplyAlert({
         type: 'success',
         text: `Sent via ${chosenTier.email} (Delivery ID: ${data.id || 'ok'})`
@@ -1170,6 +1187,7 @@ export default function EmailCenterPage() {
         body: composeBody.trim(),
         timestamp: new Date().toISOString(),
         status: 'Delivered',
+        isImportant: composeIsImportant,
         attachments: composeAttachments.map(a => ({
           name: a.name,
           size: a.size,
@@ -1208,6 +1226,7 @@ export default function EmailCenterPage() {
         category: composeCategory,
         status: composeCategory === 'vendor' ? 'In Follow-up' : 'Quoted',
         isStarred: false,
+        isImportant: composeIsImportant,
         isDeleted: false,
         deletedAt: null,
         lastUpdated: new Date().toISOString(),
@@ -1231,6 +1250,7 @@ export default function EmailCenterPage() {
       setComposeCc('');
       setComposeSubject('');
       setComposeBody('');
+      setComposeIsImportant(false);
       setComposeAttachments([]);
       if (composeFileInputRef.current) composeFileInputRef.current.value = '';
       setIsComposeOpen(false);
@@ -1326,36 +1346,6 @@ export default function EmailCenterPage() {
         /* (Items marked in red removed, action buttons shifted) */
         /* ==================================================== */
         <div className="flex-1 flex flex-col overflow-hidden bg-gray-50/60">
-          {/* Bin Top Bar */}
-          <div className="px-6 py-3.5 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchParams({});
-                  setActiveTab('all');
-                }}
-                className="flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition cursor-pointer"
-              >
-                <ArrowLeft size={14} /> Back to Mailing Center
-              </button>
-              <span className="text-xs text-gray-500 font-semibold hidden sm:inline">
-                • {binThreads.length} {binThreads.length === 1 ? 'conversation' : 'conversations'} in Mail Bin
-              </span>
-            </div>
-
-            {binThreads.length > 0 && (
-              <button
-                type="button"
-                onClick={handleEmptyBin}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-bold rounded-lg border border-red-200 transition cursor-pointer"
-                title="Permanently remove all conversations in Mail Bin"
-              >
-                <Trash2 size={13} /> Empty Bin
-              </button>
-            )}
-          </div>
-
           {/* Mail Bin Cards List */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {filteredThreads.length === 0 ? (
@@ -1580,10 +1570,15 @@ export default function EmailCenterPage() {
 
                     {/* Thread Details */}
                     <div className="flex-1 min-w-0 pr-1">
-                      <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center justify-between mb-0.5 gap-1.5">
                         <span className={`font-bold text-sm truncate ${isSelected ? 'text-amber-900' : 'text-gray-900'}`}>
                           {thread.contactName}
                         </span>
+                        {thread.isImportant && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-100 text-red-700 shrink-0">
+                            <Tag size={9} className="fill-red-200" /> Important
+                          </span>
+                        )}
                       </div>
 
                       <div className="text-xs text-gray-500 font-medium truncate mb-0.5">
@@ -1616,6 +1611,22 @@ export default function EmailCenterPage() {
                       <div className="flex items-center gap-1 mt-auto">
                         {!isBinView ? (
                           <>
+                            <button
+                              type="button"
+                              onClick={(e) => handleToggleImportant(thread.id, e)}
+                              className={`p-1 rounded-md transition cursor-pointer ${
+                                thread.isImportant 
+                                  ? 'text-red-600 hover:bg-red-100/60' 
+                                  : 'text-gray-300 hover:text-red-500 hover:bg-gray-100'
+                              }`}
+                              title={thread.isImportant ? "Important (Click to unmark)" : "Mark conversation as Important"}
+                            >
+                              <Tag 
+                                size={14} 
+                                className={thread.isImportant ? 'fill-red-200 text-red-600' : ''} 
+                              />
+                            </button>
+
                             <button
                               type="button"
                               onClick={(e) => handleToggleStar(thread.id, e)}
@@ -1693,9 +1704,16 @@ export default function EmailCenterPage() {
                   </button>
 
                   <div>
-                    <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                      {activeThread.messages?.[activeThread.messages?.length - 1]?.subject || 'Direct Conversation'}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                        {activeThread.messages?.[activeThread.messages?.length - 1]?.subject || 'Direct Conversation'}
+                      </h2>
+                      {activeThread.isImportant && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 shrink-0">
+                          <Tag size={11} className="fill-red-200" /> Important
+                        </span>
+                      )}
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-0.5">
                       <span className="font-bold text-gray-800">{activeThread.contactName}</span>
@@ -1715,6 +1733,19 @@ export default function EmailCenterPage() {
 
                 {/* Right Action Icons for Active Conversation */}
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleImportant(activeThread.id)}
+                    className={`p-2 rounded-lg border transition cursor-pointer ${
+                      activeThread.isImportant 
+                        ? 'bg-red-50 text-red-600 border-red-300' 
+                        : 'text-gray-400 hover:text-red-600 hover:bg-gray-50 border-gray-200'
+                    }`}
+                    title={activeThread.isImportant ? 'Marked as Important (Click to unmark)' : 'Mark conversation as Important'}
+                  >
+                    <Tag size={16} className={activeThread.isImportant ? 'fill-red-100 text-red-600' : ''} />
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => handleToggleStar(activeThread.id)}
@@ -1833,6 +1864,11 @@ export default function EmailCenterPage() {
                         <span className="text-gray-400 text-[11px]">
                           {new Date(msg.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                         </span>
+                        {msg.isImportant && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-100 text-red-700 ml-1">
+                            <Tag size={10} className="fill-red-200" /> Important
+                          </span>
+                        )}
                       </div>
 
                       {/* Message Card - Spacious & Clean */}
@@ -1848,6 +1884,11 @@ export default function EmailCenterPage() {
                             <span className="inline-flex items-center gap-1.5 font-semibold text-amber-400">
                               <span className="w-2 h-2 rounded-full bg-amber-400"></span>
                               {msg.tier || 'Dispatched via Resend'}
+                              {msg.isImportant && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-500/20 text-red-300 border border-red-500/30">
+                                  <Tag size={10} className="fill-red-400/40" /> Important
+                                </span>
+                              )}
                             </span>
                             <span className="text-[11px] text-gray-400 font-mono">
                               From: {msg.senderEmail}
@@ -2180,7 +2221,21 @@ export default function EmailCenterPage() {
                     />
                   </div>
 
-                  <div className="flex justify-end items-center">
+                  <div className="flex justify-end items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setReplyIsImportant(!replyIsImportant)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition cursor-pointer border ${
+                        replyIsImportant
+                          ? 'bg-red-50 text-red-700 border-red-300 ring-2 ring-red-400/20 shadow-xs'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                      }`}
+                      title={replyIsImportant ? 'Marked as Important (Click to unmark)' : 'Mark this reply as Important'}
+                    >
+                      <Tag size={14} className={replyIsImportant ? 'text-red-600 fill-red-100' : 'text-gray-400'} />
+                      <span>Important</span>
+                    </button>
+
                     <button
                       type="submit"
                       disabled={isSendingReply || !replyBody.trim()}
@@ -2246,16 +2301,31 @@ export default function EmailCenterPage() {
                 </div>
               )}
 
-              {/* From Address Dropdown */}
+              {/* From Address Dropdown & Important Toggle */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  From Address *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    From Address *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setComposeIsImportant(!composeIsImportant)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ${
+                      composeIsImportant
+                        ? 'bg-red-50 text-red-700 border-red-300 ring-2 ring-red-400/20 shadow-xs'
+                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                    }`}
+                    title={composeIsImportant ? 'Marked as Important (Click to unmark)' : 'Mark as Important'}
+                  >
+                    <Tag size={13} className={composeIsImportant ? 'text-red-600 fill-red-100' : 'text-gray-400'} />
+                    <span>Important</span>
+                  </button>
+                </div>
                 <div className="relative">
                   <select
                     value={composeTierId}
                     onChange={(e) => setComposeTierId(e.target.value)}
-                    className="w-full text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 outline-none pr-8 cursor-pointer"
+                    className="w-full text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-amber-500 outline-none pr-8 cursor-pointer appearance-none"
                   >
                     {SENDER_TIERS.map(tier => (
                       <option key={tier.id} value={tier.id}>
