@@ -168,18 +168,18 @@ export default function LeadsPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requirements</th>
-                <th scope="col" className="px-6 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="w-28 px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider shrink-0">Date</th>
+                <th scope="col" className="w-72 min-w-[220px] px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Details</th>
+                <th scope="col" className="w-[420px] min-w-[360px] max-w-[460px] px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Requirements</th>
+                <th scope="col" className="w-36 px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
                     <span>Status</span>
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
-                      className="normal-case tracking-normal text-xs font-semibold px-2.5 py-1 rounded-md border border-gray-300 bg-white hover:border-amber-500 text-gray-700 shadow-2xs focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
+                      className="normal-case tracking-normal text-xs font-semibold px-2 py-1 rounded-md border border-gray-300 bg-white hover:border-amber-500 text-gray-700 shadow-2xs focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
                       title="Filter leads by status"
                     >
                       <option value="All">All</option>
@@ -189,99 +189,131 @@ export default function LeadsPage() {
                     </select>
                   </div>
                 </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th scope="col" className="w-36 px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLeads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(lead.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">{lead.contact_name}</div>
-                    <div className="text-sm text-gray-500">{lead.company_name || '-'}</div>
-                    <div className="text-sm text-amber-700 mt-1">{lead.email}</div>
-                    <div className="text-sm text-gray-500">{lead.phone}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {lead.target_product_sku && (
-                      <div className="text-sm font-medium text-amber-700 mb-1">
-                        SKU: {lead.target_product_sku}
-                      </div>
-                    )}
-                    {lead.estimated_qty && (
-                      <div className="text-sm text-gray-900 mb-1">
-                        Qty: {lead.estimated_qty}
-                      </div>
-                    )}
-                    {lead.message ? (
-                      <div className={`mt-1.5 flex items-start gap-2 ${expandedLeadIds[lead.id] ? 'max-w-md' : 'max-w-xs'}`}>
-                        <div 
-                          onClick={() => toggleExpandLead(lead.id)}
-                          className={`text-sm flex-1 cursor-pointer transition-all ${
-                            expandedLeadIds[lead.id]
-                              ? 'text-gray-900 whitespace-pre-wrap bg-amber-50/70 p-2.5 rounded-lg border border-amber-200/80 shadow-xs'
-                              : 'text-gray-500 line-clamp-2'
-                          }`}
-                          title={!expandedLeadIds[lead.id] ? lead.message : "Click to collapse"}
-                        >
-                          "{lead.message}"
+              {filteredLeads.map((lead) => {
+                const isExpanded = !!expandedLeadIds[lead.id];
+
+                return (
+                  <tr key={lead.id} className="hover:bg-gray-50/70 transition-colors">
+                    {/* Date */}
+                    <td className="w-28 px-5 py-4 align-top whitespace-nowrap text-xs sm:text-sm text-gray-500 font-medium">
+                      {new Date(lead.created_at).toLocaleDateString()}
+                    </td>
+
+                    {/* Contact Details */}
+                    <td className="w-72 min-w-[220px] px-5 py-4 align-top">
+                      <div className="text-sm font-bold text-gray-900 leading-snug">{lead.contact_name}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{lead.company_name || '-'}</div>
+                      <div className="text-xs text-amber-800 font-medium mt-1 font-mono">{lead.email}</div>
+                      {lead.phone && <div className="text-xs text-gray-500 mt-0.5 font-mono">{lead.phone}</div>}
+                    </td>
+
+                    {/* Requirements */}
+                    <td className="w-[420px] min-w-[360px] max-w-[460px] px-5 py-4 align-top">
+                      {lead.target_product_sku && (
+                        <div className="text-xs font-bold text-amber-800 mb-1 flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 bg-amber-50 border border-amber-200/60 rounded text-[11px] font-mono">
+                            SKU: {lead.target_product_sku}
+                          </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => toggleExpandLead(lead.id)}
-                          className="p-1 rounded-md border border-gray-300 hover:border-amber-500 bg-white hover:bg-amber-50 text-gray-600 hover:text-amber-800 shadow-2xs transition-all cursor-pointer shrink-0 mt-0.5"
-                          title={expandedLeadIds[lead.id] ? "Collapse requirement" : "Show entire requirement"}
-                          aria-label={expandedLeadIds[lead.id] ? "Collapse requirement" : "Show entire requirement"}
-                        >
-                          {expandedLeadIds[lead.id] ? (
-                            <ChevronUp size={16} className="text-amber-700" />
+                      )}
+                      {lead.estimated_qty && (
+                        <div className="text-xs text-gray-600 mb-1.5 font-medium">
+                          Qty: <span className="text-gray-900 font-semibold">{lead.estimated_qty}</span>
+                        </div>
+                      )}
+                      
+                      {lead.message ? (
+                        <div className="w-full">
+                          {isExpanded ? (
+                            <div className="bg-slate-50/90 rounded-xl p-3.5 border border-slate-200/90 shadow-2xs">
+                              <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200/70">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                                  Full Requirement
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleExpandLead(lead.id)}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold text-amber-800 hover:text-amber-900 hover:bg-amber-100/60 rounded-md transition cursor-pointer"
+                                  title="Collapse requirement"
+                                >
+                                  <span>Show less</span>
+                                  <ChevronUp size={13} />
+                                </button>
+                              </div>
+                              <div className="text-xs sm:text-sm text-gray-800 leading-relaxed whitespace-pre-wrap select-text font-normal">
+                                "{lead.message}"
+                              </div>
+                            </div>
                           ) : (
-                            <ChevronDown size={16} />
+                            <div className="flex items-start gap-2">
+                              <div 
+                                onClick={() => toggleExpandLead(lead.id)}
+                                className="text-xs sm:text-sm text-gray-600 line-clamp-2 leading-relaxed cursor-pointer flex-1 hover:text-gray-900 transition select-none"
+                                title="Click to view full requirement"
+                              >
+                                "{lead.message}"
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => toggleExpandLead(lead.id)}
+                                className="p-1 rounded-md border border-gray-200 hover:border-amber-400 bg-white hover:bg-amber-50 text-gray-400 hover:text-amber-800 shadow-2xs transition cursor-pointer shrink-0 mt-0.5"
+                                title="Show full requirement"
+                                aria-label="Show full requirement"
+                              >
+                                <ChevronDown size={14} />
+                              </button>
+                            </div>
                           )}
+                        </div>
+                      ) : (
+                        !lead.target_product_sku && !lead.estimated_qty && (
+                          <span className="text-xs text-gray-400 italic">No details provided</span>
+                        )
+                      )}
+                    </td>
+
+                    {/* Status */}
+                    <td className="w-36 px-5 py-4 align-top whitespace-nowrap">
+                      <select
+                        value={lead.status || 'New'}
+                        onChange={(e) => updateStatus(lead.id, e.target.value)}
+                        className={`text-xs font-bold rounded-full px-3 py-1 outline-none cursor-pointer border-0 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-amber-500 ${getStatusColor(lead.status || 'New')}`}
+                      >
+                        <option value="New">New</option>
+                        <option value="Contacted">Contacted</option>
+                        <option value="Closed">Closed</option>
+                      </select>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="w-36 px-5 py-4 align-top whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => {
+                            setSelectedLeadForEmail(lead);
+                            setIsEmailModalOpen(true);
+                          }}
+                          className="text-white bg-[#C95A08] hover:bg-orange-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          title="Reply with Baachko Mailers"
+                        >
+                          <Mail size={14} /> Reply
+                        </button>
+                        <button 
+                          onClick={() => deleteLead(lead.id)}
+                          className="text-red-500 hover:text-red-700 transition flex items-center p-1.5 bg-gray-100 hover:bg-red-50 rounded-lg cursor-pointer"
+                          title="Delete Lead"
+                        >
+                          <Trash2 size={14} />
                         </button>
                       </div>
-                    ) : (
-                      !lead.target_product_sku && !lead.estimated_qty && (
-                        <span className="text-sm text-gray-400 italic">-</span>
-                      )
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={lead.status || 'New'}
-                      onChange={(e) => updateStatus(lead.id, e.target.value)}
-                      className={`text-xs font-bold rounded-full px-3 py-1 outline-none cursor-pointer border-0 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-amber-500 ${getStatusColor(lead.status || 'New')}`}
-                    >
-                      <option value="New">New</option>
-                      <option value="Contacted">Contacted</option>
-                      <option value="Closed">Closed</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => {
-                          setSelectedLeadForEmail(lead);
-                          setIsEmailModalOpen(true);
-                        }}
-                        className="text-white bg-[#C95A08] hover:bg-orange-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-                        title="Reply with Baachko Mailers"
-                      >
-                        <Mail size={14} /> Reply
-                      </button>
-                      <button 
-                        onClick={() => deleteLead(lead.id)}
-                        className="text-red-500 hover:text-red-700 transition flex items-center p-1.5 bg-gray-100 hover:bg-red-50 rounded-lg cursor-pointer"
-                        title="Delete Lead"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
               
               {filteredLeads.length === 0 && (
                 <tr>
