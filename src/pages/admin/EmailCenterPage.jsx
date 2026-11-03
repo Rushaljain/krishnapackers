@@ -838,6 +838,26 @@ export default function EmailCenterPage() {
     });
   };
 
+  const handleEmptyBin = async () => {
+    if (binThreads.length === 0) return;
+    if (!window.confirm("Are you sure you want to permanently delete all conversations in the bin? This action cannot be undone.")) {
+      return;
+    }
+    for (const t of binThreads) {
+      recordTombstone(t);
+      if (t.email) {
+        try {
+          await supabase.from('rfq_leads').delete().ilike('email', t.email.toLowerCase().trim());
+        } catch (e) {}
+      }
+    }
+    setThreads(prev => prev.filter(t => !t.isDeleted));
+    if (activeThread?.isDeleted) {
+      setSelectedThreadId(null);
+    }
+    setReplyAlert({ type: 'success', text: 'Mail Bin emptied permanently.' });
+  };
+
   // Filtered thread pools
   const activeThreads = useMemo(() => threads.filter(t => !t.isDeleted), [threads]);
   const binThreads = useMemo(() => threads.filter(t => Boolean(t.isDeleted)), [threads]);
@@ -1298,9 +1318,141 @@ export default function EmailCenterPage() {
       </div>
 
       {/* ==================================================== */}
-      {/* MAIN TWO-PANE WORKSPACE (FLUSH, SECTIONLESS)         */}
+      {/* WORKSPACE: DEDICATED MAIL BIN OR 2-PANE MAILING      */}
       {/* ==================================================== */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-white">
+      {isBinView ? (
+        /* ==================================================== */
+        /* DEDICATED MAIL BIN (TRASH) VIEW                      */
+        /* (Items marked in red removed, action buttons shifted) */
+        /* ==================================================== */
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-50/60">
+          {/* Bin Top Bar */}
+          <div className="px-6 py-3.5 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchParams({});
+                  setActiveTab('all');
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition cursor-pointer"
+              >
+                <ArrowLeft size={14} /> Back to Mailing Center
+              </button>
+              <span className="text-xs text-gray-500 font-semibold hidden sm:inline">
+                • {binThreads.length} {binThreads.length === 1 ? 'conversation' : 'conversations'} in Mail Bin
+              </span>
+            </div>
+
+            {binThreads.length > 0 && (
+              <button
+                type="button"
+                onClick={handleEmptyBin}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-bold rounded-lg border border-red-200 transition cursor-pointer"
+                title="Permanently remove all conversations in Mail Bin"
+              >
+                <Trash2 size={13} /> Empty Bin
+              </button>
+            )}
+          </div>
+
+          {/* Mail Bin Cards List */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            {filteredThreads.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 max-w-md mx-auto p-8 shadow-xs">
+                <Trash2 size={44} className="mx-auto mb-3 text-gray-300" />
+                <h3 className="text-base font-bold text-gray-800 mb-1">Mail Bin is Empty</h3>
+                <p className="text-xs text-gray-500 mb-5">
+                  {searchQuery.trim() ? "No deleted conversations match your search." : "There are currently no deleted conversations in your bin."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchParams({});
+                    setActiveTab('all');
+                  }}
+                  className="px-4 py-2 bg-[#C95A08] hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Return to Mailing Center
+                </button>
+              </div>
+            ) : (
+              <div className="max-w-5xl mx-auto space-y-3">
+                {filteredThreads.map((thread) => {
+                  const lastMsg = thread.messages?.[thread.messages?.length - 1];
+                  const msgCount = thread.messages?.length || 0;
+
+                  return (
+                    <div
+                      key={thread.id}
+                      className="p-4 sm:p-5 bg-white hover:bg-amber-50/30 rounded-xl border border-gray-200 transition shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      {/* Left: Contact & Conversation Details */}
+                      <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs bg-amber-100 text-amber-800">
+                          {thread.contactName?.slice(0, 2).toUpperCase() || 'BK'}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="font-bold text-sm text-gray-900">
+                              {thread.contactName}
+                            </span>
+                            <span className="text-xs text-gray-500 font-medium">
+                              • {thread.company}
+                            </span>
+                            <span className="text-xs text-gray-400 font-mono">
+                              • {thread.email}
+                            </span>
+                          </div>
+
+                          <div className="text-xs text-gray-800 font-semibold truncate mb-1">
+                            {lastMsg?.subject || thread.subject || 'Direct Inquiry'}
+                          </div>
+
+                          <div className="text-xs text-gray-500 line-clamp-1 leading-relaxed">
+                            {cleanEmailBody(lastMsg?.body || 'No message content.')}
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-400 font-medium">
+                            <span>Moved to Bin: {new Date(thread.deletedAt || thread.lastUpdated || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            {msgCount > 1 && <span>• {msgCount} messages</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: The Shifted Action Buttons from Yellow Box directly on the card */}
+                      <div className="flex items-center gap-2 shrink-0 sm:self-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRestoreFromBin(thread.id)}
+                          className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition cursor-pointer text-xs shadow-xs"
+                          title="Restore conversation to Inbox"
+                        >
+                          <RotateCcw size={14} /> Restore to Inbox
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handlePermanentlyDelete(thread.id)}
+                          className="flex items-center gap-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition cursor-pointer text-xs shadow-xs"
+                          title="Permanently delete conversation"
+                        >
+                          <Trash2 size={14} /> Delete Permanently
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* ==================================================== */
+        /* STANDARD MAILING CENTER TWO-PANE WORKSPACE           */
+        /* ==================================================== */
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 bg-white">
         
         {/* -------------------------------------------------- */}
         {/* LEFT PANE: GMAIL-STYLE MAIL LIST                   */}
@@ -2061,6 +2213,7 @@ export default function EmailCenterPage() {
         </div>
 
       </div>
+      )}
 
       {/* ==================================================== */}
       {/* POP-UP MODAL: COMPOSE NEW EMAIL (NEW MAIL ID)        */}
