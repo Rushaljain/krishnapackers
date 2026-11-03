@@ -947,26 +947,6 @@ export default function EmailCenterPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Conversation Switcher Dropdown in Same Window */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:inline">
-                    Conversation:
-                  </span>
-                  <select
-                    value={activeThread.id}
-                    onChange={(e) => setSelectedThreadId(e.target.value)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-gray-50 hover:bg-white text-gray-800 focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer max-w-[200px] sm:max-w-[280px] truncate"
-                    title="Switch Conversation"
-                  >
-                    {threads.map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.contactName}: {t.messages?.[t.messages?.length - 1]?.subject || 'Direct Thread'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
               </div>
 
               {/* Thread Trail Timeline (Scrollable, Generous Space) */}
