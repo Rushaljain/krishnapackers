@@ -110,7 +110,6 @@ export default function AdminLayout() {
   const navigation = [
     { name: 'Leads & Quotes', href: '/adminpanel', icon: LayoutDashboard },
     { name: 'Mailing Center', href: '/adminpanel/emails', icon: Mail },
-    { name: 'Mail Bin', href: '/adminpanel/emails?view=bin', icon: Trash2 },
   ];
 
   return (
@@ -144,9 +143,7 @@ export default function AdminLayout() {
           {/* Navigation Links */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
-              const isActive = item.href.includes('view=bin')
-                ? isMailBin
-                : (location.pathname === item.href && !isMailBin);
+              const isActive = location.pathname === item.href && !isMailBin;
               return (
                 <Link
                   key={item.name}
@@ -168,6 +165,27 @@ export default function AdminLayout() {
               );
             })}
           </nav>
+
+          {/* Bottom Sidebar Action: Mail Bin (Shifted to bottom as requested) */}
+          <div className="p-4 pt-0">
+            <Link
+              to="/adminpanel/emails?view=bin"
+              onClick={() => {
+                if (window.innerWidth < 768) {
+                  setIsSidebarOpen(false);
+                }
+              }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                isMailBin 
+                  ? 'bg-amber-700 text-white shadow-sm' 
+                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
+              }`}
+              title="View deleted conversations"
+            >
+              <Trash2 size={20} />
+              <span className="font-medium">Mail Bin</span>
+            </Link>
+          </div>
 
           {/* Footer User Info & Sign Out */}
           <div className="p-4 border-t border-gray-700 mt-auto">
