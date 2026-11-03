@@ -31,22 +31,128 @@ export function formatFileSize(bytes) {
 export function getAttachmentCategory(att) {
   if (!att) return 'file';
   const name = (att.name || att.filename || '').toLowerCase();
-  const type = (att.type || att.contentType || '').toLowerCase();
+  const type = (att.type || att.content_type || att.contentType || '').toLowerCase();
   if (type.includes('pdf') || name.endsWith('.pdf')) return 'pdf';
   if (type.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(name)) return 'image';
   if (type.includes('sheet') || type.includes('excel') || type.includes('csv') || /\.(xlsx|xls|csv)$/i.test(name)) return 'excel';
   return 'file';
 }
 
-export function downloadAttachment(att) {
-  const url = att.url || att.dataUrl || att.content;
-  if (!url) return;
+export async function downloadAttachment(att) {
+  if (!att) return;
+  const rawUrl = att.url || att.dataUrl || att.content || att.download_url;
+  const fileName = att.name || att.filename || 'attachment';
+
+  if (!rawUrl) {
+    console.warn('No attachment URL found to download:', att);
+    alert('Attachment file URL is currently unavailable.');
+    return;
+  }
+
+  // 1. Data URL (Base64) -> Convert to Blob and download
+  if (typeof rawUrl === 'string' && rawUrl.startsWith('data:')) {
+    try {
+      const parts = rawUrl.split(',');
+      const mime = parts[0].match(/:(.*?);/)?.[1] || att.type || 'application/octet-stream';
+      const byteString = atob(parts[1]);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mime });
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+      return;
+    } catch (e) {
+      console.error('Failed to create blob from data URL:', e);
+    }
+  }
+
+  // 2. HTTP / HTTPS / API URL -> Fetch as blob and download with custom filename
+  if (typeof rawUrl === 'string' && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('/api/'))) {
+    try {
+      const res = await fetch(rawUrl);
+      if (res.ok) {
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+        return;
+      }
+    } catch (err) {
+      console.warn('Direct fetch for download failed, attempting browser navigation:', err);
+    }
+  }
+
+  // 3. Fallback: Native link click
   const link = document.createElement('a');
-  link.href = url;
-  link.download = att.name || att.filename || 'attachment';
+  link.href = rawUrl;
+  link.download = fileName;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+// ==========================================
+// PERSISTENT TOMBSTONE BLACKLIST FOR DELETED CONVERSATIONS
+// ==========================================
+export const TOMBSTONE_THREADS_KEY = 'baachko_perm_deleted_thread_ids_v2';
+export const TOMBSTONE_EMAILS_KEY = 'baachko_perm_deleted_keys_v2';
+export const TOMBSTONE_MSGS_KEY = 'baachko_perm_deleted_msg_ids_v2';
+
+export function getTombstones() {
+  try {
+    const threadIds = new Set(JSON.parse(localStorage.getItem(TOMBSTONE_THREADS_KEY) || '[]'));
+    const threadKeys = new Set(JSON.parse(localStorage.getItem(TOMBSTONE_EMAILS_KEY) || '[]'));
+    const msgIds = new Set(JSON.parse(localStorage.getItem(TOMBSTONE_MSGS_KEY) || '[]'));
+    return { threadIds, threadKeys, msgIds };
+  } catch (e) {
+    return { threadIds: new Set(), threadKeys: new Set(), msgIds: new Set() };
+  }
+}
+
+export function recordTombstone(thread) {
+  if (!thread) return;
+  try {
+    const { threadIds, threadKeys, msgIds } = getTombstones();
+    if (thread.id) threadIds.add(String(thread.id));
+
+    const normSub = normalizeSubject(thread.subject || thread.messages?.[0]?.subject || '');
+    if (thread.email) {
+      const cleanEmail = thread.email.toLowerCase().trim();
+      if (normSub) threadKeys.add(`${cleanEmail}___${normSub}`);
+      threadKeys.add(cleanEmail);
+    }
+
+    if (Array.isArray(thread.messages)) {
+      for (const m of thread.messages) {
+        if (m.id) {
+          msgIds.add(String(m.id));
+          msgIds.add(String(m.id).replace(/^msg-/, ''));
+        }
+      }
+    }
+
+    localStorage.setItem(TOMBSTONE_THREADS_KEY, JSON.stringify(Array.from(threadIds)));
+    localStorage.setItem(TOMBSTONE_EMAILS_KEY, JSON.stringify(Array.from(threadKeys)));
+    localStorage.setItem(TOMBSTONE_MSGS_KEY, JSON.stringify(Array.from(msgIds)));
+  } catch (e) {
+    console.warn('Could not persist tombstone:', e);
+  }
 }
 import { supabase } from '../../lib/supabase';
 
@@ -282,6 +388,7 @@ export default function EmailCenterPage() {
   const [threads, setThreads] = useState(() => {
     try {
       const saved = localStorage.getItem('baachko_email_threads_v3');
+      const { threadIds: tombstoneIds, threadKeys: tombstoneKeys } = getTombstones();
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
@@ -289,6 +396,11 @@ export default function EmailCenterPage() {
             .filter(t => {
               if (!t || typeof t !== 'object') return false;
               if (t.id?.startsWith('thread-demo')) return false;
+              if (tombstoneIds.has(String(t.id))) return false;
+              const normSub = normalizeSubject(t.subject || t.messages?.[0]?.subject || '');
+              const cleanEmail = (t.email || '').toLowerCase().trim();
+              const key = `${cleanEmail}___${normSub}`;
+              if (tombstoneKeys.has(key) || tombstoneKeys.has(cleanEmail)) return false;
               // If it's an inbound thread, ensure recipient was one of the 4 allowed mailboxes
               const firstRecipient = t.messages?.[0]?.recipientEmail?.toLowerCase()?.trim();
               if (firstRecipient && firstRecipient.endsWith('@baachko.com')) {
@@ -363,40 +475,41 @@ export default function EmailCenterPage() {
 
   const handleViewAttachment = (att) => {
     const category = getAttachmentCategory(att);
-    const url = att.url || att.dataUrl || att.content;
+    const rawUrl = att.url || att.dataUrl || att.content || att.download_url;
+
+    if (category === 'pdf') {
+      let viewerUrl = rawUrl;
+      if (rawUrl && typeof rawUrl === 'string' && rawUrl.startsWith('data:')) {
+        try {
+          const parts = rawUrl.split(',');
+          const mime = parts[0].match(/:(.*?);/)?.[1] || 'application/pdf';
+          const byteString = atob(parts[1]);
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: mime });
+          viewerUrl = URL.createObjectURL(blob);
+        } catch (e) {
+          console.warn('Could not create Blob URL for PDF:', e);
+        }
+      }
+      setPreviewAttachment({
+        ...att,
+        viewerUrl: viewerUrl || rawUrl
+      });
+      return;
+    }
 
     if (category === 'image') {
       setPreviewAttachment(att);
       return;
     }
 
-    if (category === 'pdf') {
-      if (url && typeof url === 'string' && url.startsWith('data:')) {
-        try {
-          const arr = url.split(',');
-          const mime = arr[0].match(/:(.*?);/)?.[1] || 'application/pdf';
-          const bstr = atob(arr[1]);
-          let n = bstr.length;
-          const u8arr = new Uint8Array(n);
-          while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-          }
-          const blob = new Blob([u8arr], { type: mime });
-          const blobUrl = URL.createObjectURL(blob);
-          window.open(blobUrl, '_blank');
-          return;
-        } catch (e) {
-          console.warn("Could not open PDF in new tab, falling back to modal", e);
-        }
-      } else if (url) {
-        window.open(url, '_blank');
-        return;
-      }
-    }
-
-    if (category === 'excel' && (att.name || att.filename || '').toLowerCase().endsWith('.csv') && url && url.startsWith('data:')) {
+    if (category === 'excel' && (att.name || att.filename || '').toLowerCase().endsWith('.csv') && rawUrl && rawUrl.startsWith('data:')) {
       try {
-        const arr = url.split(',');
+        const arr = rawUrl.split(',');
         const text = atob(arr[1]);
         const rows = text.split(/\r?\n/).filter(Boolean).map(r => r.split(','));
         setCsvPreviewData({ name: att.name || att.filename, rows });
@@ -482,9 +595,16 @@ export default function EmailCenterPage() {
 
       setThreads(prev => {
         let updatedThreads = prev.filter(t => !t.id?.startsWith('thread-demo')).map(t => ({ ...t, messages: [...(t.messages || [])] }));
+        const { threadIds: tombstoneIds, threadKeys: tombstoneKeys, msgIds: tombstoneMsgs } = getTombstones();
 
         for (const item of validEmails) {
-          const msgId = `msg-${item.id}`;
+          const rawMsgId = String(item.id);
+          const msgId = `msg-${rawMsgId}`;
+
+          // If this message or thread was permanently deleted, skip it completely!
+          if (tombstoneMsgs.has(rawMsgId) || tombstoneMsgs.has(msgId)) continue;
+          if (tombstoneIds.has(`inbound-${rawMsgId}`)) continue;
+
           const sender = typeof item.from === 'string' ? item.from : 'Customer';
           const senderEmail = (sender.match(/<([^>]+)>/)?.[1] || sender).trim();
           const senderName = sender.split('<')[0].replace(/"/g, '').trim() || senderEmail.split('@')[0];
@@ -499,6 +619,20 @@ export default function EmailCenterPage() {
           // Clean Gmail/Outlook quoted text history so only fresh reply is shown
           const cleanBody = item.cleanBody || cleanEmailBody(item.text, item.html) || 'Incoming email received via baachko.com MX server.';
 
+          // Normalize and enrich attachments
+          const itemAttachments = (item.attachments || []).map(att => {
+            const proxyUrl = `/api/inbound-email?action=attachment&emailId=${encodeURIComponent(item.id)}&attachmentId=${encodeURIComponent(att.id || '')}`;
+            return {
+              id: att.id,
+              name: att.name || att.filename || 'attachment',
+              filename: att.filename || att.name || 'attachment',
+              size: att.size || 0,
+              type: att.type || att.content_type || 'application/octet-stream',
+              url: att.url || att.download_url || proxyUrl,
+              download_url: att.download_url || att.url || proxyUrl
+            };
+          });
+
           const newMsg = {
             id: msgId,
             senderType: 'inbound',
@@ -511,11 +645,16 @@ export default function EmailCenterPage() {
             body: cleanBody,
             timestamp: item.created_at || new Date().toISOString(),
             status: 'Received',
-            attachments: item.attachments || []
+            attachments: itemAttachments
           };
 
           // Find if we already have a conversation thread with this sender email & matching subject
           const normIncomingSubject = normalizeSubject(item.subject);
+          const itemKey = `${senderEmail.toLowerCase().trim()}___${normIncomingSubject}`;
+          if (tombstoneKeys.has(itemKey) || tombstoneKeys.has(senderEmail.toLowerCase().trim())) {
+            continue;
+          }
+
           const existingIndex = updatedThreads.findIndex(t => {
             if (t.email?.toLowerCase().trim() !== senderEmail.toLowerCase().trim()) return false;
             const normThreadSubject = normalizeSubject(t.subject || t.messages?.[0]?.subject || '');
@@ -578,13 +717,22 @@ export default function EmailCenterPage() {
 
       setThreads(prev => {
         const cleanPrev = (prev || []).filter(t => t && !t.id?.startsWith('thread-demo'));
+        const { threadIds: tombstoneIds, threadKeys: tombstoneKeys } = getTombstones();
         const existingEmails = new Set(
           cleanPrev
             .filter(t => t && t.email)
             .map(t => t.email.toLowerCase().trim())
         );
         const newThreadsFromLeads = data
-          .filter(lead => lead.email && !existingEmails.has(lead.email.toLowerCase()))
+          .filter(lead => {
+            if (!lead.email) return false;
+            const cleanLeadEmail = lead.email.toLowerCase().trim();
+            const normSub = normalizeSubject(lead.target_product_sku || '');
+            const leadKey = `${cleanLeadEmail}___${normSub}`;
+            if (tombstoneKeys.has(leadKey) || tombstoneKeys.has(cleanLeadEmail)) return false;
+            if (tombstoneIds.has(`lead-${lead.id}`)) return false;
+            return !existingEmails.has(cleanLeadEmail);
+          })
           .map(lead => ({
             id: `lead-${lead.id}`,
             contactName: lead.contact_name || 'Website Inquiry',
@@ -656,15 +804,38 @@ export default function EmailCenterPage() {
     }));
   };
 
-  const handlePermanentlyDelete = (threadId, e) => {
+  const handlePermanentlyDelete = async (threadId, e) => {
     if (e) e.stopPropagation();
     if (!window.confirm("Are you sure you want to permanently delete this conversation? This action cannot be undone.")) {
       return;
     }
+    const targetThread = threads.find(t => t.id === threadId);
+    if (targetThread) {
+      // 1. Record persistent tombstone so neither Resend nor Supabase polling recreates it
+      recordTombstone(targetThread);
+
+      // 2. Also remove corresponding lead from Supabase if applicable
+      if (targetThread.email) {
+        try {
+          await supabase
+            .from('rfq_leads')
+            .delete()
+            .ilike('email', targetThread.email.toLowerCase().trim());
+        } catch (supaErr) {
+          console.warn('Failed to delete lead from Supabase:', supaErr);
+        }
+      }
+    }
+
     setThreads(prev => prev.filter(t => t.id !== threadId));
     if (selectedThreadId === threadId) {
       setSelectedThreadId(null);
     }
+
+    setReplyAlert({
+      type: 'success',
+      text: 'Conversation permanently deleted.'
+    });
   };
 
   // Filtered thread pools
@@ -1389,6 +1560,41 @@ export default function EmailCenterPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Right Action Icons for Active Conversation */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleStar(activeThread.id)}
+                    className={`p-2 rounded-lg border transition cursor-pointer ${
+                      activeThread.isStarred 
+                        ? 'bg-amber-50 text-amber-500 border-amber-300' 
+                        : 'text-gray-400 hover:text-amber-500 hover:bg-gray-50 border-gray-200'
+                    }`}
+                    title={activeThread.isStarred ? 'Unstar conversation' : 'Star conversation'}
+                  >
+                    <Star size={16} fill={activeThread.isStarred ? 'currentColor' : 'none'} />
+                  </button>
+                  {!activeThread.isDeleted ? (
+                    <button
+                      type="button"
+                      onClick={(e) => handleMoveToBin(activeThread.id, e)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 border border-gray-200 rounded-lg transition cursor-pointer"
+                      title="Delete conversation (Move to Bin)"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => handlePermanentlyDelete(activeThread.id, e)}
+                      className="p-2 text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition cursor-pointer"
+                      title="Delete permanently"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Bin Banner if Active Thread is in Bin */}
@@ -2073,55 +2279,94 @@ export default function EmailCenterPage() {
       )}
 
       {/* ==================================================== */}
-      {/* ATTACHMENT PREVIEW & LIGHTBOX MODAL                  */}
+      {/* ATTACHMENT VIEWER & PREVIEW MODAL                    */}
       {/* ==================================================== */}
       {previewAttachment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-gray-200">
             {/* Modal Header */}
-            <div className="bg-[#0B1730] px-6 py-4 flex items-center justify-between text-white">
+            <div className="bg-[#0B1730] px-5 sm:px-6 py-3.5 flex items-center justify-between text-white shrink-0">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
                   {getAttachmentCategory(previewAttachment) === 'pdf' ? <FileText size={18} /> :
                    getAttachmentCategory(previewAttachment) === 'image' ? <Image size={18} /> :
                    <FileSpreadsheet size={18} />}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-bold text-sm truncate">{previewAttachment.name || previewAttachment.filename}</h3>
-                  <span className="text-[11px] text-gray-400">{formatFileSize(previewAttachment.size)}</span>
+                  <h3 className="font-bold text-sm truncate" title={previewAttachment.name || previewAttachment.filename}>
+                    {previewAttachment.name || previewAttachment.filename}
+                  </h3>
+                  <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                    <span className="uppercase font-semibold tracking-wider">
+                      {getAttachmentCategory(previewAttachment) === 'pdf' ? 'PDF Document' :
+                       getAttachmentCategory(previewAttachment) === 'image' ? 'Image File' :
+                       getAttachmentCategory(previewAttachment) === 'excel' ? 'Spreadsheet' : 'File'}
+                    </span>
+                    {previewAttachment.size ? <span>• {formatFileSize(previewAttachment.size)}</span> : null}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Open in New Tab Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targetUrl = previewAttachment.viewerUrl || previewAttachment.url || previewAttachment.download_url || previewAttachment.dataUrl;
+                    if (targetUrl) window.open(targetUrl, '_blank');
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-semibold transition cursor-pointer"
+                  title="Open document in a new browser tab"
+                >
+                  <Maximize2 size={13} />
+                  <span className="hidden sm:inline">Open in Tab</span>
+                </button>
+
+                {/* Download Button */}
                 <button
                   type="button"
                   onClick={() => downloadAttachment(previewAttachment)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shadow-sm"
+                  title="Download file to computer"
                 >
                   <Download size={14} /> Download
                 </button>
+
+                {/* Close Button */}
                 <button
                   type="button"
                   onClick={() => {
                     setPreviewAttachment(null);
                     setCsvPreviewData(null);
                   }}
-                  className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition cursor-pointer"
+                  className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition cursor-pointer ml-1"
+                  title="Close viewer"
                 >
                   <X size={18} />
                 </button>
               </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-gray-50">
-              {getAttachmentCategory(previewAttachment) === 'image' ? (
-                <img
-                  src={previewAttachment.url || previewAttachment.dataUrl}
-                  alt={previewAttachment.name}
-                  className="max-h-[70vh] max-w-full rounded-lg object-contain shadow-md"
-                />
+            {/* Modal Body: Direct PDF Viewer, Image Viewer, or Spreadsheet */}
+            <div className="flex-1 overflow-auto p-4 sm:p-6 flex items-center justify-center bg-slate-900/95 min-h-[500px]">
+              {getAttachmentCategory(previewAttachment) === 'pdf' ? (
+                <div className="w-full h-full min-h-[550px] max-h-[82vh] flex flex-col bg-white rounded-xl overflow-hidden shadow-2xl border border-gray-700/50">
+                  <iframe
+                    src={`${previewAttachment.viewerUrl || previewAttachment.url || previewAttachment.download_url || previewAttachment.dataUrl}#toolbar=1`}
+                    className="w-full h-[76vh] border-0 rounded-xl bg-white"
+                    title={previewAttachment.name || 'PDF Document'}
+                  />
+                </div>
+              ) : getAttachmentCategory(previewAttachment) === 'image' ? (
+                <div className="flex items-center justify-center p-2">
+                  <img
+                    src={previewAttachment.url || previewAttachment.dataUrl || previewAttachment.download_url}
+                    alt={previewAttachment.name}
+                    className="max-h-[78vh] max-w-full rounded-lg object-contain shadow-2xl"
+                  />
+                </div>
               ) : csvPreviewData ? (
-                <div className="w-full h-full max-h-[70vh] overflow-auto bg-white rounded-xl border border-gray-200">
+                <div className="w-full h-full max-h-[75vh] overflow-auto bg-white rounded-xl border border-gray-200 shadow-md">
                   <table className="w-full text-xs text-left border-collapse">
                     <tbody>
                       {csvPreviewData.rows.map((row, rIdx) => (
@@ -2137,16 +2382,16 @@ export default function EmailCenterPage() {
                   </table>
                 </div>
               ) : (
-                <div className="text-center p-8 bg-white rounded-xl border border-gray-200 max-w-md">
-                  <FileText size={48} className="mx-auto mb-3 text-gray-400" />
+                <div className="text-center p-8 bg-white rounded-xl border border-gray-200 max-w-md shadow-xl">
+                  <FileText size={48} className="mx-auto mb-3 text-amber-600" />
                   <p className="font-bold text-gray-800 text-sm mb-1">{previewAttachment.name || previewAttachment.filename}</p>
-                  <p className="text-xs text-gray-500 mb-4">{formatFileSize(previewAttachment.size)} • Standard format</p>
+                  <p className="text-xs text-gray-500 mb-4">{formatFileSize(previewAttachment.size)} • Document</p>
                   <button
                     type="button"
                     onClick={() => downloadAttachment(previewAttachment)}
-                    className="px-4 py-2 bg-[#C95A08] hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer"
                   >
-                    <Download size={14} /> Download & Open File
+                    <Download size={14} /> Download File
                   </button>
                 </div>
               )}

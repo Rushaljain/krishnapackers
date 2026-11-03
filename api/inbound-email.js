@@ -196,14 +196,39 @@ export default async function handler(req, res) {
 
   const resend = new Resend(apiKey);
 
-  // GET: Fetch incoming received emails directly into the Baachko ERP Mailing Center
+  // GET: Fetch incoming received emails or download attachment directly
   if (req.method === 'GET') {
+    // 1. Direct Attachment Download/Stream Proxy
+    if (req.query && req.query.action === 'attachment') {
+      const emailId = req.query.emailId;
+      const attachmentId = req.query.attachmentId || req.query.id;
+      if (!emailId || !attachmentId) {
+        return res.status(400).json({ error: 'Missing emailId or attachmentId' });
+      }
+      try {
+        if (resend.emails && resend.emails.receiving && resend.emails.receiving.attachments) {
+          const attRes = await resend.emails.receiving.attachments.get({
+            emailId: String(emailId),
+            id: String(attachmentId)
+          });
+          const attData = attRes.data || attRes;
+          if (attData && attData.download_url) {
+            return res.redirect(302, attData.download_url);
+          }
+        }
+        return res.status(404).json({ error: 'Attachment not found or download URL unavailable' });
+      } catch (err) {
+        console.error('Error fetching receiving attachment:', err);
+        return res.status(500).json({ error: err.message || 'Failed to fetch attachment' });
+      }
+    }
+
     try {
       if (resend.emails && resend.emails.receiving && typeof resend.emails.receiving.list === 'function') {
         const listResult = await resend.emails.receiving.list();
         const items = listResult.data?.data || listResult.data || [];
 
-        // Fetch detailed email body (text/html) for the latest incoming emails
+        // Fetch detailed email body and attachment download URLs for the latest incoming emails
         const detailedItems = await Promise.all(
           items.slice(0, 15).map(async (item) => {
             try {
@@ -211,9 +236,44 @@ export default async function handler(req, res) {
                 const fullRes = await resend.emails.receiving.get(item.id);
                 const fullData = fullRes.data || fullRes || item;
                 const cleaned = cleanEmailBody(fullData.text, fullData.html);
+
+                let populatedAttachments = [];
+                if (fullData.attachments && Array.isArray(fullData.attachments)) {
+                  populatedAttachments = await Promise.all(
+                    fullData.attachments.map(async (att) => {
+                      let downloadUrl = null;
+                      try {
+                        if (resend.emails.receiving.attachments?.get) {
+                          const aRes = await resend.emails.receiving.attachments.get({
+                            emailId: item.id,
+                            id: att.id
+                          });
+                          const aData = aRes.data || aRes;
+                          downloadUrl = aData?.download_url || null;
+                        }
+                      } catch (e) {
+                        console.warn('Could not pre-fetch download_url for attachment:', att.id, e?.message);
+                      }
+                      const proxyUrl = `/api/inbound-email?action=attachment&emailId=${encodeURIComponent(item.id)}&attachmentId=${encodeURIComponent(att.id)}`;
+                      return {
+                        id: att.id,
+                        emailId: item.id,
+                        name: att.filename || att.name || 'attachment',
+                        filename: att.filename || att.name || 'attachment',
+                        size: att.size || 0,
+                        type: att.content_type || att.type || 'application/octet-stream',
+                        contentType: att.content_type || att.type || 'application/octet-stream',
+                        download_url: downloadUrl || proxyUrl,
+                        url: downloadUrl || proxyUrl
+                      };
+                    })
+                  );
+                }
+
                 return {
                   ...fullData,
-                  cleanBody: cleaned || fullData.text || 'Incoming email received via baachko.com MX server.'
+                  cleanBody: cleaned || fullData.text || 'Incoming email received via baachko.com MX server.',
+                  attachments: populatedAttachments
                 };
               }
               return item;
