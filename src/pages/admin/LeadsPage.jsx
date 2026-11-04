@@ -153,26 +153,12 @@ export default function LeadsPage() {
             className="w-full pl-9 sm:pl-10 pr-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
           />
         </div>
-        <div className="flex items-center gap-2.5 justify-between sm:justify-end shrink-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-gray-500">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs font-semibold px-2.5 py-1.5 sm:py-2 rounded-lg border border-gray-300 bg-white hover:border-amber-500 text-gray-700 shadow-2xs focus:ring-2 focus:ring-amber-500 outline-none cursor-pointer"
-              title="Filter leads by status"
-            >
-              <option value="All">All Statuses</option>
-              <option value="New">New</option>
-              <option value="Contacted">Contacted</option>
-              <option value="Closed">Closed</option>
-            </select>
-          </div>
+        <div className="flex items-center justify-end shrink-0">
           <button 
             onClick={exportToCSV}
-            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 sm:py-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-800 text-xs sm:text-sm font-medium rounded-lg transition cursor-pointer shrink-0"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-800 text-xs sm:text-sm font-medium rounded-lg transition cursor-pointer"
           >
-            <Download size={14} className="sm:w-4 sm:h-4" />
+            <Download size={15} />
             <span>Export CSV</span>
           </button>
         </div>
