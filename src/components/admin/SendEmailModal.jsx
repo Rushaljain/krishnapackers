@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, Mail, CheckCircle2, AlertCircle, Loader2, Sparkles, Eye, Edit3, ChevronDown } from 'lucide-react';
+import { X, Send, Mail, CheckCircle2, AlertCircle, Loader2, Sparkles, Eye, Edit3, ChevronDown, Paperclip, FileText, Image, FileSpreadsheet, File } from 'lucide-react';
+import { readFileAsDataUrl, formatFileSize, getAttachmentCategory } from '../../pages/admin/EmailCenterPage';
 import { supabase } from '../../lib/supabase';
 import { SENDER_TIERS } from '../../pages/admin/EmailCenterPage';
 
@@ -82,6 +83,31 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
   const [isSending, setIsSending] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
   const [previewMode, setPreviewMode] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const fileInputRef = React.useRef(null);
+
+  const handleFilesSelected = async (fileList) => {
+    if (!fileList || fileList.length === 0) return;
+    const newAttachments = [];
+    for (const file of Array.from(fileList)) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`File "${file.name}" exceeds 5 MB. Please select files under 5 MB.`);
+        continue;
+      }
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        newAttachments.push({
+          name: file.name,
+          size: file.size,
+          type: file.type || 'application/octet-stream',
+          dataUrl: dataUrl
+        });
+      } catch (err) {
+        console.error("Failed to read file", file.name, err);
+      }
+    }
+    setAttachments(prev => [...prev, ...newAttachments]);
+  };
 
   useEffect(() => {
     if (lead) {
@@ -92,6 +118,8 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
       setShowCc(false);
       setStatusMessage({ type: '', text: '' });
       setPreviewMode(false);
+      setAttachments([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, [lead]);
 
@@ -115,8 +143,15 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
           message: message.trim(),
           fromName: fromName.trim(),
           fromEmail: fromEmail.trim(),
+          replyTo: fromEmail.trim(),
           apiKey: customKey,
-          leadId: lead.id
+          leadId: lead.id,
+          attachments: attachments.map(a => ({
+            filename: a.name,
+            content: a.dataUrl,
+            contentType: a.type,
+            size: a.size
+          }))
         })
       });
 
@@ -336,6 +371,73 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
                 {previewMode ? <Edit3 size={13} /> : <Eye size={13} />}
                 {previewMode ? 'Switch to Edit' : 'Preview Branded Email'}
               </button>
+            </div>
+
+            {/* File Attachments Picker */}
+            <div className="mb-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.svg,.csv,.xlsx,.xls,.doc,.docx,application/pdf,image/*,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={(e) => {
+                  handleFilesSelected(e.target.files);
+                  e.target.value = '';
+                }}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition cursor-pointer ${
+                  attachments.length > 0
+                    ? 'bg-amber-100 text-amber-900 border-amber-300 ring-2 ring-amber-400/20'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                }`}
+              >
+                <Paperclip size={13} className="text-amber-700" />
+                <span>Attach Documents (PDF, Images, Excel, Word)</span>
+                {attachments.length > 0 && (
+                  <span className="bg-amber-200 text-amber-900 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                    {attachments.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Attachments Chips */}
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                  {attachments.map((att, idx) => {
+                    const cat = getAttachmentCategory(att);
+                    return (
+                      <div key={idx} className="flex items-center gap-2 bg-white px-2.5 py-1 rounded-md border border-gray-200 text-xs shadow-2xs">
+                        <span className={`p-0.5 rounded font-bold text-[9px] flex items-center gap-1 ${
+                          cat === 'pdf' ? 'bg-red-100 text-red-700' :
+                          cat === 'image' ? 'bg-purple-100 text-purple-700' :
+                          cat === 'excel' ? 'bg-emerald-100 text-emerald-700' :
+                          cat === 'word' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {cat.toUpperCase()}
+                        </span>
+                        <span className="font-semibold text-gray-800 truncate max-w-[140px]" title={att.name}>
+                          {att.name}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-mono">
+                          ({formatFileSize(att.size)})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-gray-400 hover:text-red-600 p-0.5 rounded cursor-pointer transition"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {previewMode ? (

@@ -35,6 +35,7 @@ export function getAttachmentCategory(att) {
   if (type.includes('pdf') || name.endsWith('.pdf')) return 'pdf';
   if (type.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(name)) return 'image';
   if (type.includes('sheet') || type.includes('excel') || type.includes('csv') || /\.(xlsx|xls|csv)$/i.test(name)) return 'excel';
+  if (type.includes('word') || type.includes('document') || /\.(docx?|doc)$/i.test(name)) return 'word';
   return 'file';
 }
 
@@ -1038,7 +1039,8 @@ export default function EmailCenterPage() {
           message: replyBody.trim(),
           fromName: chosenTier.fromName,
           fromEmail: chosenTier.email,
-          replyTo: 'sales@baachko.com',
+          replyTo: chosenTier.email,
+          inReplyTo: lastMsg?.messageId || undefined,
           attachments: replyAttachments.map(a => ({
             filename: a.name,
             content: a.dataUrl,
@@ -1211,7 +1213,7 @@ export default function EmailCenterPage() {
           message: composeBody.trim(),
           fromName: chosenTier.fromName,
           fromEmail: chosenTier.email,
-          replyTo: 'sales@baachko.com',
+          replyTo: chosenTier.email,
           attachments: composeAttachments.map(a => ({
             filename: a.name,
             content: a.dataUrl,
@@ -2267,7 +2269,7 @@ export default function EmailCenterPage() {
                     ref={replyFileInputRef}
                     type="file"
                     multiple
-                    accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.svg,.csv,.xlsx,.xls,application/pdf,image/*,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.svg,.csv,.xlsx,.xls,.doc,.docx,application/pdf,image/*,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     onChange={(e) => {
                       handleFilesSelected(e.target.files, 'reply');
                       e.target.value = '';
@@ -2286,11 +2288,13 @@ export default function EmailCenterPage() {
                               cat === 'pdf' ? 'bg-red-100 text-red-700' :
                               cat === 'image' ? 'bg-purple-100 text-purple-700' :
                               cat === 'excel' ? 'bg-emerald-100 text-emerald-700' :
+                              cat === 'word' ? 'bg-blue-100 text-blue-700' :
                               'bg-gray-100 text-gray-700'
                             }`}>
                               {cat === 'pdf' ? <FileText size={12} /> :
                                cat === 'image' ? <Image size={12} /> :
                                cat === 'excel' ? <FileSpreadsheet size={12} /> :
+                               cat === 'word' ? <FileText size={12} /> :
                                <File size={12} />}
                               {cat.toUpperCase()}
                             </span>
@@ -2555,7 +2559,7 @@ export default function EmailCenterPage() {
                   ref={composeFileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.svg,.csv,.xlsx,.xls,application/pdf,image/*,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.svg,.csv,.xlsx,.xls,.doc,.docx,application/pdf,image/*,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   onChange={(e) => {
                     handleFilesSelected(e.target.files, 'compose');
                     e.target.value = '';
@@ -2573,11 +2577,13 @@ export default function EmailCenterPage() {
                             cat === 'pdf' ? 'bg-red-100 text-red-700' :
                             cat === 'image' ? 'bg-purple-100 text-purple-700' :
                             cat === 'excel' ? 'bg-emerald-100 text-emerald-700' :
+                            cat === 'word' ? 'bg-blue-100 text-blue-700' :
                             'bg-gray-100 text-gray-700'
                           }`}>
                             {cat === 'pdf' ? <FileText size={12} /> :
                              cat === 'image' ? <Image size={12} /> :
                              cat === 'excel' ? <FileSpreadsheet size={12} /> :
+                             cat === 'word' ? <FileText size={12} /> :
                              <File size={12} />}
                             {cat.toUpperCase()}
                           </span>

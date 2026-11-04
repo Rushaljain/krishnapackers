@@ -27,89 +27,88 @@ function getResendApiKey(customApiKey) {
   return null;
 }
 
+// Clean executive B2B correspondence template designed to land in Primary Inbox
 function generateBrandedHtml(content, subject, senderName = "Baachko Sales Team", attachments = []) {
-  // Replace line breaks with HTML paragraphs/breaks
-  const formattedBody = content
+  const formattedBody = (content || '')
     .split('\n\n')
-    .map(p => `<p style="margin: 0 0 16px 0; line-height: 1.6; color: #374151; font-size: 15px;">${p.replace(/\n/g, '<br/>')}</p>`)
+    .map(p => `<p style="margin: 0 0 16px 0; line-height: 1.65; color: #1e293b; font-size: 15px;">${p.replace(/\n/g, '<br/>')}</p>`)
     .join('');
 
   const attachmentsListHtml = (attachments && Array.isArray(attachments) && attachments.length > 0)
     ? `
-      <div style="margin-top: 24px; padding: 14px 18px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-        <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Attached Files (${attachments.length}):</p>
-        <ul style="margin: 0; padding-left: 20px; color: #334155; font-size: 13px; line-height: 1.7;">
-          ${attachments.map(a => `<li><strong>${a.filename || a.name || 'File'}</strong>${a.size ? ` <span style="color: #64748b;">(${Math.round(a.size / 1024)} KB)</span>` : ''}</li>`).join('')}
+      <div style="margin-top: 24px; padding: 12px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Attached Documents (${attachments.length}):</p>
+        <ul style="margin: 0; padding-left: 20px; color: #334155; font-size: 13px; line-height: 1.6;">
+          ${attachments.map(a => `<li><strong>${a.filename || a.name || 'Document'}</strong>${a.size ? ` <span style="color: #64748b;">(${Math.round(a.size / 1024)} KB)</span>` : ''}</li>`).join('')}
         </ul>
       </div>
     `
     : '';
 
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${subject}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6; padding: 30px 15px;">
-    <tr>
-      <td align="center">
-        <!-- Container -->
-        <table role="presentation" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #e5e7eb;" cellspacing="0" cellpadding="0">
-          
-          <!-- Header -->
-          <tr>
-            <td style="background-color: #0B1730; padding: 28px 32px; text-align: left; border-bottom: 3px solid #C95A08;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td>
-                    <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: 0.5px;">BAACHKO</h1>
-                    <p style="margin: 4px 0 0 0; color: #C95A08; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Industrial Packaging Solutions • Est. 1974</p>
-                  </td>
-                  <td align="right">
-                    <span style="display: inline-block; background-color: rgba(255,255,255,0.12); color: #ffffff; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600;">ISO 9001:2015</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+<body style="margin: 0; padding: 24px 16px; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <div style="max-width: 620px; margin: 0 auto;">
+    
+    <!-- Clean Minimalist Business Letterhead -->
+    <div style="padding-bottom: 14px; margin-bottom: 22px; border-bottom: 2px solid #C95A08;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td align="left">
+            <span style="font-size: 20px; font-weight: 800; color: #0B1730; letter-spacing: 0.5px;">BAACHKO</span>
+            <span style="font-size: 12px; color: #64748b; font-weight: 500; margin-left: 8px;">| Industrial Packaging</span>
+          </td>
+          <td align="right">
+            <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Est. 1974</span>
+          </td>
+        </tr>
+      </table>
+    </div>
 
-          <!-- Body -->
-          <tr>
-            <td style="padding: 36px 32px 28px 32px; background-color: #ffffff;">
-              ${formattedBody}
-              ${attachmentsListHtml}
+    <!-- Direct Message Body (Front & Center) -->
+    <div style="font-size: 15px; line-height: 1.65; color: #1e293b;">
+      ${formattedBody}
+    </div>
 
-              <!-- Signoff -->
-              <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                <p style="margin: 0; color: #111827; font-weight: 700; font-size: 15px;">${senderName}</p>
-                <p style="margin: 2px 0 0 0; color: #6b7280; font-size: 13px;">Baachko Pvt. Ltd. (Krishna Packers)</p>
-                <p style="margin: 2px 0 0 0; color: #C95A08; font-size: 13px; font-weight: 500;">
-                  <a href="https://www.baachko.com" style="color: #C95A08; text-decoration: none;">www.baachko.com</a>
-                </p>
-              </div>
-            </td>
-          </tr>
+    <!-- Attached Files Info -->
+    ${attachmentsListHtml}
 
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #f9fafb; padding: 24px 32px; text-align: left; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; line-height: 1.5;">
-              <p style="margin: 0 0 8px 0; font-weight: 600; color: #374151;">Manufacturing Plant & Corporate Office:</p>
-              <p style="margin: 0 0 8px 0;">W-234, Khairane Road, TTC Industrial Area, Khairane MIDC, Navi Mumbai - 400705, Maharashtra, India</p>
-              <p style="margin: 0;">Phone: <a href="tel:+919324635279" style="color: #4b5563; text-decoration: none;">+91 93246 35279</a> / <a href="tel:+917303077339" style="color: #4b5563; text-decoration: none;">+91 73030 77339</a></p>
-            </td>
-          </tr>
+    <!-- Corporate Business Signature -->
+    <div style="margin-top: 32px; padding-top: 18px; border-top: 1px solid #e2e8f0;">
+      <p style="margin: 0; color: #0f172a; font-weight: 700; font-size: 15px;">${senderName}</p>
+      <p style="margin: 2px 0 0 0; color: #64748b; font-size: 13px;">Baachko Pvt. Ltd. (Krishna Packers)</p>
+      <p style="margin: 3px 0 0 0; font-size: 13px;">
+        <a href="https://www.baachko.com" style="color: #C95A08; text-decoration: none; font-weight: 600;">www.baachko.com</a>
+      </p>
+      <div style="margin-top: 12px; font-size: 12px; line-height: 1.5; color: #64748b;">
+        <span style="font-weight: 600; color: #475569;">Manufacturing Plant & Corporate Office:</span><br/>
+        W-234, Khairane Road, TTC Industrial Area, Khairane MIDC, Navi Mumbai - 400705, Maharashtra, India<br/>
+        Phone: <a href="tel:+919324635279" style="color: #64748b; text-decoration: none;">+91 93246 35279</a> / <a href="tel:+917303077339" style="color: #64748b; text-decoration: none;">+91 73030 77339</a>
+      </div>
+    </div>
 
-        </table>
-      </td>
-    </tr>
-  </table>
+  </div>
 </body>
-</html>
-  `.trim();
+</html>`.trim();
+}
+
+function generatePlainText(content, senderName = "Baachko Sales Team", attachments = []) {
+  let text = (content || '').trim();
+  if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+    text += `\n\nAttached Documents (${attachments.length}):\n`;
+    attachments.forEach(a => {
+      const name = a.filename || a.name || 'Document';
+      const sizeStr = a.size ? ` (${Math.round(a.size / 1024)} KB)` : '';
+      text += `- ${name}${sizeStr}\n`;
+    });
+  }
+  text += `\n--\n${senderName}\nBaachko Pvt. Ltd. (Krishna Packers)\nwww.baachko.com\nW-234, Khairane Road, TTC Industrial Area, Khairane MIDC, Navi Mumbai - 400705\nPhone: +91 93246 35279 / +91 73030 77339\n`;
+  return text;
 }
 
 export default async function handler(req, res) {
@@ -140,7 +139,8 @@ export default async function handler(req, res) {
       html, 
       fromName = 'Baachko Industrial Packaging', 
       fromEmail, 
-      replyTo = 'sales@baachko.com',
+      replyTo,
+      inReplyTo,
       apiKey: customApiKey,
       attachments
     } = req.body || {};
@@ -162,19 +162,19 @@ export default async function handler(req, res) {
 
     if (!apiKey) {
       return res.status(400).json({ 
-        error: 'Resend API Key is missing. Please configure RESEND_API_KEY in your Vercel project Environment Variables and ensure a redeployment has completed.' 
+        error: 'Resend API Key is missing. Please configure RESEND_API_KEY in your Vercel project Environment Variables.' 
       });
     }
 
     const resend = new Resend(apiKey);
 
-    // Format sender:
-    // e.g. "Baachko Industrial Packaging <sales@baachko.com>"
-    // If no custom domain provided, use sales@baachko.com or fallback to onboarding@resend.dev for test
+    // Sender formatting (align reply-to to avoid spam classification)
     const senderAddress = fromEmail || process.env.RESEND_FROM_EMAIL || 'sales@baachko.com';
     const formattedFrom = `${fromName} <${senderAddress}>`;
+    const resolvedReplyTo = replyTo || senderAddress;
 
     const emailHtml = html || generateBrandedHtml(message, subject, fromName, attachments);
+    const plainText = generatePlainText(message || subject, fromName, attachments);
 
     // Parse CC list if provided
     let ccList = undefined;
@@ -198,21 +198,46 @@ export default async function handler(req, res) {
       if (bccList && bccList.length === 0) bccList = undefined;
     }
 
+    // ==========================================
+    // ROBUST BASE64 ATTACHMENTS HANDLING
+    // (Resend API expects pure Base64 string for content)
+    // ==========================================
     let formattedAttachments = undefined;
     if (attachments && Array.isArray(attachments) && attachments.length > 0) {
       formattedAttachments = attachments.map(att => {
-        let contentBuffer = att.content;
+        let base64String = '';
         if (typeof att.content === 'string') {
-          const base64Data = att.content.replace(/^data:[^;]+;base64,/, '');
-          contentBuffer = Buffer.from(base64Data, 'base64');
+          base64String = att.content.replace(/^data:[^;]+;base64,/, '').trim();
+        } else if (typeof att.dataUrl === 'string') {
+          base64String = att.dataUrl.replace(/^data:[^;]+;base64,/, '').trim();
+        } else if (typeof att.url === 'string' && att.url.startsWith('data:')) {
+          base64String = att.url.replace(/^data:[^;]+;base64,/, '').trim();
+        } else if (Buffer.isBuffer(att.content)) {
+          base64String = att.content.toString('base64');
         }
+
+        const filename = att.filename || att.name || 'attachment';
+        const contentType = att.contentType || att.type || undefined;
+
         return {
-          filename: att.filename || att.name || 'attachment',
-          content: contentBuffer,
-          contentType: att.contentType || att.type || undefined
+          filename: filename,
+          content: base64String,
+          contentType: contentType
         };
-      });
+      }).filter(att => Boolean(att.content));
+
+      if (formattedAttachments.length === 0) {
+        formattedAttachments = undefined;
+      }
     }
+
+    // Email headers for threading into recipient's Primary inbox
+    const headers = {};
+    if (inReplyTo && typeof inReplyTo === 'string' && inReplyTo.trim()) {
+      headers['In-Reply-To'] = inReplyTo.trim();
+      headers['References'] = inReplyTo.trim();
+    }
+    headers['X-Entity-Ref-ID'] = `baachko-${Date.now()}`;
 
     const emailPayload = {
       from: formattedFrom,
@@ -221,8 +246,9 @@ export default async function handler(req, res) {
       bcc: bccList,
       subject: subject,
       html: emailHtml,
-      text: message || subject,
-      replyTo: replyTo ? (Array.isArray(replyTo) ? replyTo : [replyTo]) : undefined,
+      text: plainText,
+      replyTo: Array.isArray(resolvedReplyTo) ? resolvedReplyTo : [resolvedReplyTo],
+      headers: headers,
       attachments: formattedAttachments
     };
 
@@ -241,7 +267,8 @@ export default async function handler(req, res) {
       id: response.data?.id,
       from: formattedFrom,
       to: emailPayload.to,
-      subject: subject
+      subject: subject,
+      attachmentCount: formattedAttachments ? formattedAttachments.length : 0
     });
 
   } catch (error) {
