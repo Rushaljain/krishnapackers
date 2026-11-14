@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 export const ALLOWED_MAILBOXES = [
   'sales@baachko.com',
   'karan@baachko.com',
+  'info@baachko.com',
   'enquiry@baachko.com',
   'quotes@baachko.com'
 ];
@@ -68,7 +69,7 @@ The mailbox you attempted to reach does not exist or is not authorized to receiv
 Authorized mailboxes on baachko.com:
   • sales@baachko.com (Baachko Industrial Packaging)
   • karan@baachko.com (Karan - Baachko)
-  • enquiry@baachko.com (Baachko Enquiries)
+  • info@baachko.com (Baachko Info & Enquiries)
   • quotes@baachko.com (Baachko Quotations & Specs)
 
 Please verify the destination address and try again.
@@ -100,7 +101,7 @@ Original-Subject: ${item.subject || '(no subject)'}
   <ul style="font-size: 13px; color: #374151; padding-left: 20px; margin: 0 0 16px 0; line-height: 1.8;">
     <li><strong>sales@baachko.com</strong> — Commercial &amp; Sales Inquiries</li>
     <li><strong>karan@baachko.com</strong> — Executive &amp; Partner Communications</li>
-    <li><strong>enquiry@baachko.com</strong> — General Inquiries &amp; Customer Support</li>
+    <li><strong>info@baachko.com</strong> — General Inquiries &amp; Customer Support</li>
     <li><strong>quotes@baachko.com</strong> — Quotations &amp; Technical Spec Sheets</li>
   </ul>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />

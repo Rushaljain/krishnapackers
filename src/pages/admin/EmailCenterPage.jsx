@@ -182,12 +182,12 @@ export const SENDER_TIERS = [
     dotColor: 'bg-blue-500'
   },
   {
-    id: 'enquiry',
-    name: 'Enquiries',
-    email: 'enquiry@baachko.com',
-    fromName: 'Baachko Enquiries',
+    id: 'info',
+    name: 'Info / Enquiries',
+    email: 'info@baachko.com',
+    fromName: 'Baachko Info',
     role: 'General Inquiries & Customer Support',
-    badge: 'Enquiry',
+    badge: 'Info',
     color: 'bg-emerald-100 text-emerald-900 border-emerald-300',
     dotColor: 'bg-emerald-500'
   },
@@ -207,6 +207,7 @@ export const SENDER_TIERS = [
 export const ALLOWED_MAILBOXES = [
   'sales@baachko.com',
   'karan@baachko.com',
+  'info@baachko.com',
   'enquiry@baachko.com',
   'quotes@baachko.com'
 ];
@@ -266,7 +267,11 @@ export const getSenderTier = (id) => {
     t.email === id ||
     (id === 'tier-1' && t.id === 'sales') ||
     (id === 'tier-2' && t.id === 'quotes') ||
-    (id === 'tier-3' && t.id === 'enquiry')
+    (id === 'tier-3' && (t.id === 'info' || t.id === 'enquiry')) ||
+    (id === 'enquiry' && (t.id === 'info' || t.id === 'enquiry')) ||
+    (id === 'info' && (t.id === 'info' || t.id === 'enquiry')) ||
+    (id === 'enquiry@baachko.com' && t.email === 'info@baachko.com') ||
+    (id === 'info@baachko.com' && t.email === 'info@baachko.com')
   );
   return found || SENDER_TIERS[0];
 };
@@ -297,7 +302,7 @@ export function matchesSenderTier(msg, tierId) {
   if (tierField.includes(idStr)) return true;
   if (idStr === 'quotes' && (tierField.includes('quot') || sender.includes('quote') || recipient.includes('quote'))) return true;
   if (idStr === 'sales' && (tierField.includes('sale') || tierField.includes('corporate') || sender.includes('sale') || recipient.includes('sale'))) return true;
-  if (idStr === 'enquiry' && (tierField.includes('enquir') || tierField.includes('vendor') || sender.includes('enquir') || recipient.includes('enquir'))) return true;
+  if ((idStr === 'info' || idStr === 'enquiry') && (tierField.includes('info') || tierField.includes('enquir') || tierField.includes('vendor') || sender.includes('info') || sender.includes('enquir') || recipient.includes('info') || recipient.includes('enquir'))) return true;
   if (idStr === 'karan' && (tierField.includes('karan') || sender.includes('karan') || recipient.includes('karan'))) return true;
 
   return false;
@@ -331,7 +336,7 @@ Baachko Pvt. Ltd. (Krishna Packers)`
   },
   {
     title: 'Vendor Material Follow-up',
-    tierId: 'enquiry',
+    tierId: 'info',
     category: 'vendor',
     subject: 'Procurement Follow-up: Raw Material Supply & Spot Rates - Baachko',
     body: `Dear Partner / Vendor,
@@ -736,7 +741,7 @@ export default function EmailCenterPage() {
               phone: '',
               targetSku: '',
               subject: item.subject || 'Incoming Inquiry',
-              category: recipient.includes('enquiry') ? 'vendor' : 'quote',
+              category: (recipient.includes('info') || recipient.includes('enquiry')) ? 'vendor' : 'quote',
               status: 'New',
               isStarred: false,
               isDeleted: false,
@@ -979,9 +984,9 @@ export default function EmailCenterPage() {
         if (lastMsg.tierId) initialTier = lastMsg.tierId;
         else if (lastMsg.recipientEmail?.includes('quotes') || lastMsg.senderEmail?.includes('quotes')) initialTier = 'quotes';
         else if (lastMsg.recipientEmail?.includes('karan') || lastMsg.senderEmail?.includes('karan')) initialTier = 'karan';
-        else if (lastMsg.recipientEmail?.includes('enquiry') || lastMsg.senderEmail?.includes('enquiry')) initialTier = 'enquiry';
+        else if (lastMsg.recipientEmail?.includes('info') || lastMsg.senderEmail?.includes('info') || lastMsg.recipientEmail?.includes('enquiry') || lastMsg.senderEmail?.includes('enquiry')) initialTier = 'info';
       } else if (activeThread.category === 'vendor') {
-        initialTier = 'enquiry';
+        initialTier = 'info';
       } else if (activeThread.category === 'quote') {
         initialTier = 'quotes';
       }
