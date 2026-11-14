@@ -39,8 +39,8 @@ export default function Footer({ onOpenQuote }) {
               </li>
               <li className="flex items-start gap-2">
                 <Mail size={16} className="mt-0.5 text-amber-700 flex-shrink-0" />
-                <a href="mailto:karan.apcotraders@gmail.com" className="hover:text-amber-700 transition break-all">
-                  karan.apcotraders@gmail.com
+                <a href="mailto:info@baachko.com" className="hover:text-amber-700 transition break-all">
+                  info@baachko.com
                 </a>
               </li>
             </ul>
