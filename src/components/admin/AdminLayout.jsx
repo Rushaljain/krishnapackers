@@ -51,6 +51,7 @@ class AdminErrorBoundary extends React.Component {
 export default function AdminLayout() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('baachko_admin_sidebar_open');
@@ -89,11 +90,20 @@ export default function AdminLayout() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/adminpanel/login');
+    setIsLoggingOut(true);
+    try {
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise(resolve => setTimeout(resolve, 2000))
+      ]);
+    } catch (err) {
+      console.error('Error signing out:', err);
+    } finally {
+      window.location.replace('/');
+    }
   };
 
-  if (loading) {
+  if (loading || isLoggingOut) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="animate-spin h-8 w-8 text-amber-700" />
@@ -199,10 +209,15 @@ export default function AdminLayout() {
           <div className="p-4 border-t border-gray-700 mt-auto">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 px-4 py-3 text-red-400 hover:bg-white/10 hover:text-red-300 rounded-lg transition cursor-pointer"
+              disabled={isLoggingOut}
+              className="flex w-full items-center gap-3 px-4 py-3 text-red-400 hover:bg-white/10 hover:text-red-300 rounded-lg transition cursor-pointer disabled:opacity-50"
             >
-              <LogOut size={20} />
-              <span className="font-medium">Sign Out</span>
+              {isLoggingOut ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <LogOut size={20} />
+              )}
+              <span className="font-medium">{isLoggingOut ? 'Signing Out...' : 'Sign Out'}</span>
             </button>
           </div>
         </div>
