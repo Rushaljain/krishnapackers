@@ -118,9 +118,9 @@ export const TOMBSTONE_MSGS_KEY = 'baachko_perm_deleted_msg_ids_v2';
 export function getTombstones() {
   try {
     const threadIds = new Set(JSON.parse(localStorage.getItem(TOMBSTONE_THREADS_KEY) || '[]'));
-    const threadKeys = new Set(JSON.parse(localStorage.getItem(TOMBSTONE_EMAILS_KEY) || '[]'));
     const msgIds = new Set(JSON.parse(localStorage.getItem(TOMBSTONE_MSGS_KEY) || '[]'));
-    return { threadIds, threadKeys, msgIds };
+    // Always return empty set for threadKeys to eliminate any past email address or subject blacklists
+    return { threadIds, threadKeys: new Set(), msgIds };
   } catch (e) {
     return { threadIds: new Set(), threadKeys: new Set(), msgIds: new Set() };
   }
@@ -129,15 +129,8 @@ export function getTombstones() {
 export function recordTombstone(thread) {
   if (!thread) return;
   try {
-    const { threadIds, threadKeys, msgIds } = getTombstones();
+    const { threadIds, msgIds } = getTombstones();
     if (thread.id) threadIds.add(String(thread.id));
-
-    const normSub = normalizeSubject(thread.subject || thread.messages?.[0]?.subject || '');
-    if (thread.email) {
-      const cleanEmail = thread.email.toLowerCase().trim();
-      if (normSub) threadKeys.add(`${cleanEmail}___${normSub}`);
-      threadKeys.add(cleanEmail);
-    }
 
     if (Array.isArray(thread.messages)) {
       for (const m of thread.messages) {
@@ -149,8 +142,9 @@ export function recordTombstone(thread) {
     }
 
     localStorage.setItem(TOMBSTONE_THREADS_KEY, JSON.stringify(Array.from(threadIds)));
-    localStorage.setItem(TOMBSTONE_EMAILS_KEY, JSON.stringify(Array.from(threadKeys)));
     localStorage.setItem(TOMBSTONE_MSGS_KEY, JSON.stringify(Array.from(msgIds)));
+    // Remove the old email blacklist key to prevent dropping future incoming emails
+    localStorage.removeItem(TOMBSTONE_EMAILS_KEY);
   } catch (e) {
     console.warn('Could not persist tombstone:', e);
   }
@@ -430,8 +424,14 @@ export default function EmailCenterPage() {
   // Master Threads State (Genuine leads from Supabase / real sent mail, no dummy data)
   const [threads, setThreads] = useState(() => {
     try {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('baachko_perm_deleted_keys_v2');
+          localStorage.removeItem('baachko_perm_deleted_keys');
+        } catch (e) {}
+      }
       const saved = localStorage.getItem('baachko_email_threads_v3');
-      const { threadIds: tombstoneIds, threadKeys: tombstoneKeys } = getTombstones();
+      const { threadIds: tombstoneIds } = getTombstones();
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
@@ -440,11 +440,7 @@ export default function EmailCenterPage() {
               if (!t || typeof t !== 'object') return false;
               if (t.id?.startsWith('thread-demo')) return false;
               if (tombstoneIds.has(String(t.id))) return false;
-              const normSub = normalizeSubject(t.subject || t.messages?.[0]?.subject || '');
-              const cleanEmail = (t.email || '').toLowerCase().trim();
-              const key = `${cleanEmail}___${normSub}`;
-              if (tombstoneKeys.has(key) || tombstoneKeys.has(cleanEmail)) return false;
-              // If it's an inbound thread, ensure recipient was one of the 4 allowed mailboxes
+              // If it's an inbound thread, ensure recipient was one of the allowed mailboxes
               const firstRecipient = t.messages?.[0]?.recipientEmail?.toLowerCase()?.trim();
               if (firstRecipient && firstRecipient.endsWith('@baachko.com')) {
                 return ALLOWED_MAILBOXES.includes(firstRecipient);
@@ -656,7 +652,7 @@ export default function EmailCenterPage() {
 
       setThreads(prev => {
         let updatedThreads = prev.filter(t => !t.id?.startsWith('thread-demo')).map(t => ({ ...t, messages: [...(t.messages || [])] }));
-        const { threadIds: tombstoneIds, threadKeys: tombstoneKeys, msgIds: tombstoneMsgs } = getTombstones();
+        const { threadIds: tombstoneIds, msgIds: tombstoneMsgs } = getTombstones();
 
         for (const item of validEmails) {
           const rawMsgId = String(item.id);
@@ -711,10 +707,6 @@ export default function EmailCenterPage() {
 
           // Find if we already have a conversation thread with this sender email & matching subject
           const normIncomingSubject = normalizeSubject(item.subject);
-          const itemKey = `${senderEmail.toLowerCase().trim()}___${normIncomingSubject}`;
-          if (tombstoneKeys.has(itemKey) || tombstoneKeys.has(senderEmail.toLowerCase().trim())) {
-            continue;
-          }
 
           const existingIndex = updatedThreads.findIndex(t => {
             if (t.email?.toLowerCase().trim() !== senderEmail.toLowerCase().trim()) return false;
@@ -731,6 +723,8 @@ export default function EmailCenterPage() {
             if (!hasMsg) {
               updatedThreads[existingIndex] = {
                 ...currentThread,
+                isDeleted: false,
+                deletedAt: null,
                 status: 'Reply Received',
                 lastUpdated: item.created_at || new Date().toISOString(),
                 messages: [...currentThread.messages, newMsg]
@@ -778,7 +772,7 @@ export default function EmailCenterPage() {
 
       setThreads(prev => {
         const cleanPrev = (prev || []).filter(t => t && !t.id?.startsWith('thread-demo'));
-        const { threadIds: tombstoneIds, threadKeys: tombstoneKeys } = getTombstones();
+        const { threadIds: tombstoneIds } = getTombstones();
         const existingEmails = new Set(
           cleanPrev
             .filter(t => t && t.email)
@@ -788,9 +782,6 @@ export default function EmailCenterPage() {
           .filter(lead => {
             if (!lead.email) return false;
             const cleanLeadEmail = lead.email.toLowerCase().trim();
-            const normSub = normalizeSubject(lead.target_product_sku || '');
-            const leadKey = `${cleanLeadEmail}___${normSub}`;
-            if (tombstoneKeys.has(leadKey) || tombstoneKeys.has(cleanLeadEmail)) return false;
             if (tombstoneIds.has(`lead-${lead.id}`)) return false;
             return !existingEmails.has(cleanLeadEmail);
           })
