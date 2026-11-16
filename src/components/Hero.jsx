@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, ShieldCheck, ChevronRight } from 'lucide-react';
+import { ShieldCheck, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BaachkoLogo from './BaachkoLogo';
 
@@ -46,9 +46,6 @@ export default function Hero({ onOpenQuote }) {
           </p>
           
           <div className="flex flex-wrap gap-3 sm:gap-4 mb-8 sm:mb-10">
-            <span className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md text-white px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm md:text-base font-medium border border-white/25 shadow-md">
-              <Award size={18} className="text-[#C95A08] flex-shrink-0" /> ISO 9001:2015
-            </span>
             <span className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md text-white px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm md:text-base font-medium border border-white/25 shadow-md">
               <ShieldCheck size={18} className="text-[#C95A08] flex-shrink-0" /> Govt. Certified
             </span>
