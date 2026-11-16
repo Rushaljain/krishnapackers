@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, Mail, CheckCircle2, AlertCircle, Loader2, Sparkles, Eye, Edit3, ChevronDown, Paperclip, FileText, Image, FileSpreadsheet, File } from 'lucide-react';
+import { X, Send, Mail, CheckCircle2, AlertCircle, Loader2, Sparkles, ChevronDown, Paperclip, FileText, Image, FileSpreadsheet, File } from 'lucide-react';
 import { readFileAsDataUrl, formatFileSize, getAttachmentCategory } from '../../pages/admin/EmailCenterPage';
 import { supabase } from '../../lib/supabase';
 import { SENDER_TIERS } from '../../pages/admin/EmailCenterPage';
@@ -82,7 +82,6 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
-  const [previewMode, setPreviewMode] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const fileInputRef = React.useRef(null);
 
@@ -359,19 +358,9 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                Message Body
-              </label>
-              <button
-                type="button"
-                onClick={() => setPreviewMode(!previewMode)}
-                className="text-xs font-medium text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
-              >
-                {previewMode ? <Edit3 size={13} /> : <Eye size={13} />}
-                {previewMode ? 'Switch to Edit' : 'Preview Branded Email'}
-              </button>
-            </div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+              Message Body
+            </label>
 
             {/* File Attachments Picker */}
             <div className="mb-2">
@@ -440,32 +429,14 @@ export default function SendEmailModal({ isOpen, onClose, lead, onEmailSent }) {
               )}
             </div>
 
-            {previewMode ? (
-              <div className="border border-gray-200 rounded-lg p-4 bg-slate-50 text-xs sm:text-sm text-gray-800 space-y-3 font-sans max-h-64 overflow-y-auto">
-                <div className="border-b border-gray-200 pb-2 mb-2">
-                  <span className="font-bold text-[#0B1730]">BAACHKO</span> — Industrial Packaging
-                </div>
-                {message.trim() ? (
-                  message.split('\n\n').map((para, i) => (
-                    <p key={i} className="leading-relaxed">{para}</p>
-                  ))
-                ) : (
-                  <p className="text-gray-400 italic">No message body written yet.</p>
-                )}
-                <div className="pt-3 border-t border-gray-200 text-xs text-gray-500">
-                  W-234, Khairane Road, TTC Industrial Area, Navi Mumbai - 400705
-                </div>
-              </div>
-            ) : (
-              <textarea 
-                rows={9}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full text-sm px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none font-sans leading-relaxed"
-                placeholder="Compose your email message here..."
-                required
-              />
-            )}
+            <textarea 
+              rows={9}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full text-sm px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none font-sans leading-relaxed"
+              placeholder="Compose your email message here..."
+              required
+            />
           </div>
 
           {/* Footer Action */}
