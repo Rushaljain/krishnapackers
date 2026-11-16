@@ -4,6 +4,7 @@ export const ALLOWED_MAILBOXES = [
   'sales@baachko.com',
   'karan@baachko.com',
   'info@baachko.com',
+  'procurement@baachko.com',
   'enquiry@baachko.com',
   'quotes@baachko.com'
 ];
@@ -70,7 +71,7 @@ Authorized mailboxes on baachko.com:
   • sales@baachko.com (Baachko Industrial Packaging)
   • karan@baachko.com (Karan - Baachko)
   • info@baachko.com (Baachko Info & Enquiries)
-  • quotes@baachko.com (Baachko Quotations & Specs)
+  • procurement@baachko.com (Baachko Procurement & Specs)
 
 Please verify the destination address and try again.
 
@@ -102,7 +103,7 @@ Original-Subject: ${item.subject || '(no subject)'}
     <li><strong>sales@baachko.com</strong> — Commercial &amp; Sales Inquiries</li>
     <li><strong>karan@baachko.com</strong> — Executive &amp; Partner Communications</li>
     <li><strong>info@baachko.com</strong> — General Inquiries &amp; Customer Support</li>
-    <li><strong>quotes@baachko.com</strong> — Quotations &amp; Technical Spec Sheets</li>
+    <li><strong>procurement@baachko.com</strong> — Procurement, Quotations &amp; Technical Spec Sheets</li>
   </ul>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
   <p style="font-size: 11px; color: #9ca3af; margin: 0;">

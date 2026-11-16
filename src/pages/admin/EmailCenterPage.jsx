@@ -192,12 +192,12 @@ export const SENDER_TIERS = [
     dotColor: 'bg-emerald-500'
   },
   {
-    id: 'quotes',
-    name: 'Quotations',
-    email: 'quotes@baachko.com',
-    fromName: 'Baachko Quotations & Specs',
-    role: 'Quotations, Technical Spec Sheets, Sample Confirmations',
-    badge: 'Quotes',
+    id: 'procurement',
+    name: 'Procurement',
+    email: 'procurement@baachko.com',
+    fromName: 'Baachko Procurement',
+    role: 'Procurement, Quotations & Technical Spec Sheets',
+    badge: 'Procurement',
     color: 'bg-amber-100 text-amber-900 border-amber-300',
     dotColor: 'bg-amber-500'
   }
@@ -208,6 +208,7 @@ export const ALLOWED_MAILBOXES = [
   'sales@baachko.com',
   'karan@baachko.com',
   'info@baachko.com',
+  'procurement@baachko.com',
   'enquiry@baachko.com',
   'quotes@baachko.com'
 ];
@@ -266,10 +267,14 @@ export const getSenderTier = (id) => {
     t.id === id || 
     t.email === id ||
     (id === 'tier-1' && t.id === 'sales') ||
-    (id === 'tier-2' && t.id === 'quotes') ||
+    (id === 'tier-2' && (t.id === 'procurement' || t.id === 'quotes')) ||
     (id === 'tier-3' && (t.id === 'info' || t.id === 'enquiry')) ||
     (id === 'enquiry' && (t.id === 'info' || t.id === 'enquiry')) ||
     (id === 'info' && (t.id === 'info' || t.id === 'enquiry')) ||
+    (id === 'quotes' && (t.id === 'procurement' || t.id === 'quotes')) ||
+    (id === 'procurement' && (t.id === 'procurement' || t.id === 'quotes')) ||
+    (id === 'quotes@baachko.com' && t.email === 'procurement@baachko.com') ||
+    (id === 'procurement@baachko.com' && t.email === 'procurement@baachko.com') ||
     (id === 'enquiry@baachko.com' && t.email === 'info@baachko.com') ||
     (id === 'info@baachko.com' && t.email === 'info@baachko.com')
   );
@@ -300,7 +305,7 @@ export function matchesSenderTier(msg, tierId) {
   if (recipient === targetEmail) return true;
   if (sender.includes(idStr) || recipient.includes(idStr)) return true;
   if (tierField.includes(idStr)) return true;
-  if (idStr === 'quotes' && (tierField.includes('quot') || sender.includes('quote') || recipient.includes('quote'))) return true;
+  if ((idStr === 'procurement' || idStr === 'quotes') && (tierField.includes('procure') || tierField.includes('quot') || sender.includes('procure') || sender.includes('quote') || recipient.includes('procure') || recipient.includes('quote'))) return true;
   if (idStr === 'sales' && (tierField.includes('sale') || tierField.includes('corporate') || sender.includes('sale') || recipient.includes('sale'))) return true;
   if ((idStr === 'info' || idStr === 'enquiry') && (tierField.includes('info') || tierField.includes('enquir') || tierField.includes('vendor') || sender.includes('info') || sender.includes('enquir') || recipient.includes('info') || recipient.includes('enquir'))) return true;
   if (idStr === 'karan' && (tierField.includes('karan') || sender.includes('karan') || recipient.includes('karan'))) return true;
@@ -314,7 +319,7 @@ export function matchesSenderTier(msg, tierId) {
 export const EMAIL_TEMPLATES = [
   {
     title: 'Formal Price Quotation',
-    tierId: 'quotes',
+    tierId: 'procurement',
     category: 'quote',
     subject: 'Proforma Quotation - Baachko Industrial Packaging',
     body: `Dear [Contact Name],
@@ -353,7 +358,7 @@ Baachko Pvt. Ltd. (Krishna Packers)`
   },
   {
     title: 'Technical Specifications Sheet',
-    tierId: 'quotes',
+    tierId: 'procurement',
     category: 'quote',
     subject: 'Technical Specification Sheet - Baachko Industrial Bags',
     body: `Dear [Contact Name],
@@ -808,7 +813,7 @@ export default function EmailCenterPage() {
                 senderType: 'inbound',
                 senderName: lead.contact_name || 'Customer',
                 senderEmail: lead.email,
-                recipientEmail: 'quotes@baachko.com',
+                recipientEmail: 'procurement@baachko.com',
                 tier: 'Inbound Web RFQ',
                 subject: `Inquiry for ${lead.target_product_sku || 'Industrial Packaging'}`,
                 body: lead.message || `Customer submitted a quotation request on baachko.com for ${lead.target_product_sku || 'Packaging Sacks'}${lead.estimated_qty ? ` (Quantity: ${lead.estimated_qty})` : ''}.`,
@@ -982,13 +987,13 @@ export default function EmailCenterPage() {
       let initialTier = 'sales';
       if (lastMsg) {
         if (lastMsg.tierId) initialTier = lastMsg.tierId;
-        else if (lastMsg.recipientEmail?.includes('quotes') || lastMsg.senderEmail?.includes('quotes')) initialTier = 'quotes';
+        else if (lastMsg.recipientEmail?.includes('procurement') || lastMsg.senderEmail?.includes('procurement') || lastMsg.recipientEmail?.includes('quotes') || lastMsg.senderEmail?.includes('quotes')) initialTier = 'procurement';
         else if (lastMsg.recipientEmail?.includes('karan') || lastMsg.senderEmail?.includes('karan')) initialTier = 'karan';
         else if (lastMsg.recipientEmail?.includes('info') || lastMsg.senderEmail?.includes('info') || lastMsg.recipientEmail?.includes('enquiry') || lastMsg.senderEmail?.includes('enquiry')) initialTier = 'info';
       } else if (activeThread.category === 'vendor') {
         initialTier = 'info';
       } else if (activeThread.category === 'quote') {
-        initialTier = 'quotes';
+        initialTier = 'procurement';
       }
       setReplyTierId(initialTier);
       setSenderFilter(initialTier);
