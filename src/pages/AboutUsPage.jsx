@@ -20,10 +20,10 @@ export default function AboutUsPage() {
     <div className="pt-20 bg-gray-50 min-h-screen font-sans text-gray-900">
       
       {/* 1. HERO SECTION */}
-      <section className="max-w-7xl mx-auto px-4 py-12 md:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Left Text */}
-          <div className="space-y-6">
+          <div className="md:col-span-5 space-y-6">
             <div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-blue-950 tracking-tight mb-3">
                 About Us
@@ -38,8 +38,8 @@ export default function AboutUsPage() {
           </div>
           
           {/* Right Media */}
-          <div className="relative">
-            <div className="aspect-[5/3] w-full rounded-2xl overflow-hidden shadow-lg border border-gray-200 relative bg-[#0B1730]">
+          <div className="md:col-span-7 relative flex flex-col">
+            <div className="w-full aspect-[16/11] min-h-[320px] sm:min-h-[400px] lg:min-h-[460px] rounded-2xl overflow-hidden shadow-2xl border border-gray-200/90 relative bg-[#0B1730]">
               <video
                 autoPlay
                 loop
@@ -54,18 +54,18 @@ export default function AboutUsPage() {
               </video>
             </div>
             {/* Credibility Strip */}
-            <div className="md:absolute md:-bottom-6 md:left-6 md:right-6 bg-blue-950 text-white p-5 rounded-xl shadow-xl grid grid-cols-3 gap-4 text-center mt-4 md:mt-0 z-10">
-              <div className="flex flex-col items-center">
-                <Box className="h-6 w-6 text-orange-400 mb-2" />
-                <span className="text-xs md:text-sm font-semibold">Reliable Products</span>
+            <div className="mt-4 sm:mt-5 bg-blue-950 text-white p-4 sm:p-5 rounded-2xl shadow-xl border border-blue-900/40 grid grid-cols-3 gap-3 sm:gap-4 text-center">
+              <div className="flex flex-col items-center justify-center p-1">
+                <Box className="h-5 w-5 sm:h-6 sm:w-6 text-orange-400 mb-1.5 sm:mb-2" />
+                <span className="text-xs sm:text-sm font-semibold tracking-wide">Reliable Products</span>
               </div>
-              <div className="flex flex-col items-center border-l border-blue-800">
-                <ShieldCheck className="h-6 w-6 text-orange-400 mb-2" />
-                <span className="text-xs md:text-sm font-semibold">Consistent Quality</span>
+              <div className="flex flex-col items-center justify-center p-1 border-l border-blue-800">
+                <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-orange-400 mb-1.5 sm:mb-2" />
+                <span className="text-xs sm:text-sm font-semibold tracking-wide">Consistent Quality</span>
               </div>
-              <div className="flex flex-col items-center border-l border-blue-800">
-                <Users className="h-6 w-6 text-orange-400 mb-2" />
-                <span className="text-xs md:text-sm font-semibold">Long-Term Partnerships</span>
+              <div className="flex flex-col items-center justify-center p-1 border-l border-blue-800">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-orange-400 mb-1.5 sm:mb-2" />
+                <span className="text-xs sm:text-sm font-semibold tracking-wide">Long-Term Partnerships</span>
               </div>
             </div>
           </div>
