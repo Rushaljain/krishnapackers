@@ -62,7 +62,7 @@ export default function HomePage({ onOpenQuote }) {
             India's Leading Industrial Packaging Sacks Manufacturer
           </h2>
           <p className="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed max-w-3xl mx-auto">
-            Backed by over five decades of manufacturing excellence (formerly Krishna Packers & Apco Traders), <strong className="font-semibold text-gray-900">Baachko Pvt. Ltd.</strong> supplies high-performance Multiwall Kraft Paper Sacks, Valve Sacks, HDPE Coated Sacks, PP Woven Bags, BOPP Laminated Bags, and FIBC Jumbo Bulk Bags engineered for demanding industrial, chemical, construction, and agricultural applications.
+            Backed by over five decades of manufacturing excellence, <strong className="font-semibold text-gray-900">Baachko Pvt. Ltd.</strong> supplies high-performance Multiwall Kraft Paper Sacks, Valve Sacks, HDPE Coated Sacks, PP Woven Bags, BOPP Laminated Bags, and FIBC Jumbo Bulk Bags engineered for demanding industrial, chemical, construction, and agricultural applications.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-700 font-medium">
             <span className="bg-slate-50 px-4 py-2 rounded-full border border-gray-200">📍 TTC Industrial Area, Navi Mumbai</span>
