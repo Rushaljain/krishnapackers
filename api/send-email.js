@@ -63,9 +63,6 @@ function generateBrandedHtml(content, subject, senderName = "Baachko Sales Team"
             <span style="font-size: 20px; font-weight: 800; color: #0B1730; letter-spacing: 0.5px;">BAACHKO</span>
             <span style="font-size: 12px; color: #64748b; font-weight: 500; margin-left: 8px;">| Industrial Packaging</span>
           </td>
-          <td align="right">
-            <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Est. 1974</span>
-          </td>
         </tr>
       </table>
     </div>
