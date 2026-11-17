@@ -28,6 +28,20 @@ export function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+export function formatThreadDate(dateVal) {
+  if (!dateVal) return '';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+export function formatThreadTime(dateVal) {
+  if (!dateVal) return '';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 export function getAttachmentCategory(att) {
   if (!att) return 'file';
   const name = (att.name || att.filename || '').toLowerCase();
@@ -211,10 +225,16 @@ export function isAllowedInboundRecipient(toField) {
   if (!toField) return false;
   const list = Array.isArray(toField) ? toField : [toField];
   return list.some(raw => {
-    if (!raw || typeof raw !== 'string') return false;
-    const match = raw.match(/<([^>]+)>/)?.[1] || raw;
-    const clean = match.replace(/["']/g, '').toLowerCase().trim();
-    return ALLOWED_MAILBOXES.includes(clean);
+    if (!raw) return false;
+    let clean = '';
+    if (typeof raw === 'string') {
+      const match = raw.match(/<([^>]+)>/);
+      clean = (match ? match[1] : raw).replace(/["']/g, '').toLowerCase().trim();
+    } else if (typeof raw === 'object' && raw.email) {
+      clean = String(raw.email).toLowerCase().trim();
+    }
+    // Accept any incoming email sent to @baachko.com or permitted mailbox
+    return clean.endsWith('@baachko.com') || clean.endsWith('.baachko.com') || ALLOWED_MAILBOXES.includes(clean);
   });
 }
 
@@ -252,7 +272,8 @@ export function cleanEmailBody(bodyText, htmlContent) {
     if (/^>\s*/.test(trimmed)) continue;
     fresh.push(line);
   }
-  return fresh.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const result = fresh.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return result || text.trim() || (typeof bodyText === 'string' ? bodyText.trim() : '');
 }
 
 export const getSenderTier = (id) => {
@@ -272,7 +293,26 @@ export const getSenderTier = (id) => {
     (id === 'enquiry@baachko.com' && t.email === 'info@baachko.com') ||
     (id === 'info@baachko.com' && t.email === 'info@baachko.com')
   );
-  return found || SENDER_TIERS[0];
+  if (found) return found;
+
+  // Dynamic fallback: If an email ends with @baachko.com, dynamically generate a valid tier
+  if (typeof id === 'string' && id.includes('@baachko.com')) {
+    const clean = id.toLowerCase().trim();
+    const prefix = clean.split('@')[0];
+    const capitalized = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    return {
+      id: prefix,
+      name: `${capitalized} Team`,
+      email: clean,
+      fromName: `Baachko ${capitalized}`,
+      role: `${capitalized} Communications`,
+      badge: capitalized,
+      color: 'bg-slate-100 text-slate-900 border-slate-300',
+      dotColor: 'bg-slate-500'
+    };
+  }
+
+  return SENDER_TIERS[0];
 };
 
 export function normalizeSubject(subject = '') {
@@ -1672,14 +1712,21 @@ export default function EmailCenterPage() {
                     </div>
 
                     {/* Right Column: Date, Badge, and Action Buttons (The red box in user screenshot) */}
-                    <div className="flex flex-col items-end justify-between self-stretch shrink-0 gap-1.5 pl-1">
-                      <div className="flex items-center gap-1.5 text-gray-400">
-                        <span className="text-[11px] font-medium">
-                          {new Date(thread.lastUpdated || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                        </span>
-                        {msgCount > 1 && (
-                          <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-600">
-                            {msgCount}
+                    <div className="flex flex-col items-end justify-between self-stretch shrink-0 gap-1 pl-1">
+                      <div className="flex flex-col items-end">
+                        <div className="flex items-center gap-1.5 text-gray-400">
+                          <span className="text-[11px] font-medium text-gray-600">
+                            {formatThreadDate(thread.lastUpdated || lastMsg?.timestamp) || 'Recent'}
+                          </span>
+                          {msgCount > 1 && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-gray-100 text-gray-600">
+                              {msgCount}
+                            </span>
+                          )}
+                        </div>
+                        {formatThreadTime(thread.lastUpdated || lastMsg?.timestamp) && (
+                          <span className="text-[10px] text-gray-400 font-normal leading-tight mt-0.5">
+                            {formatThreadTime(thread.lastUpdated || lastMsg?.timestamp)}
                           </span>
                         )}
                       </div>

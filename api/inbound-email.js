@@ -25,7 +25,8 @@ function getRecipientEmails(toField) {
 function isAllowedInboundRecipient(toField) {
   const recipients = getRecipientEmails(toField);
   if (recipients.length === 0) return false;
-  return recipients.some(r => ALLOWED_MAILBOXES.includes(r));
+  // Dynamically accept any incoming email sent to @baachko.com or permitted addresses
+  return recipients.some(r => r.endsWith('@baachko.com') || r.endsWith('.baachko.com') || ALLOWED_MAILBOXES.includes(r));
 }
 
 // In-memory set to ensure each unauthorized email ID is only bounced once
@@ -174,7 +175,8 @@ function cleanEmailBody(bodyText, htmlContent) {
     if (/^>\s*/.test(trimmed)) continue;
     fresh.push(line);
   }
-  return fresh.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  const result = fresh.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return result || text.trim() || (typeof bodyText === "string" ? bodyText.trim() : "");
 }
 
 export default async function handler(req, res) {
@@ -227,12 +229,12 @@ export default async function handler(req, res) {
 
     try {
       if (resend.emails && resend.emails.receiving && typeof resend.emails.receiving.list === 'function') {
-        const listResult = await resend.emails.receiving.list();
+        const listResult = await resend.emails.receiving.list({ limit: 50 });
         const items = listResult.data?.data || listResult.data || [];
 
-        // Fetch detailed email body and attachment download URLs for the latest incoming emails
+        // Fetch detailed email body and attachment download URLs for the incoming emails
         const detailedItems = await Promise.all(
-          items.slice(0, 15).map(async (item) => {
+          items.slice(0, 40).map(async (item) => {
             try {
               if (resend.emails.receiving.get) {
                 const fullRes = await resend.emails.receiving.get(item.id);
